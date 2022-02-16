@@ -77,7 +77,7 @@ void FSemanticEventEmitterModule::PushEventHTTP(FString Level, FString Event) {
 		JsonObject->SetField("level", MakeShared<FJsonValueString>((TEXT("%s"), *Level)));
 		JsonObject->SetField("message", MakeShared<FJsonValueString>((TEXT("%s"), *Event)));
 
-        Module->SendHTTP(Module->EventEmitterURL, JsonObject);
+        Module->SendHTTP((Module->EventEmitterURL + FString("/event")), JsonObject);
     }
 	else
 	{

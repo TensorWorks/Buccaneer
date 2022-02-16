@@ -110,8 +110,8 @@ void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonO
                 ResponseStr = HttpResponse->GetContentAsString();
                 if (EHttpResponseCodes::IsOk(HttpResponse->GetResponseCode()))
                 {
-                    UE_LOG(BuccaneerCommon, VeryVerbose, TEXT("Push event response: code=%d response=%s"),
-                        HttpResponse->GetResponseCode(), *ResponseStr);
+                    // UE_LOG(BuccaneerCommon, VeryVerbose, TEXT("Push event response: code=%d response=%s"),
+                    //     HttpResponse->GetResponseCode(), *ResponseStr);
                 }
                 else
                 {
@@ -163,8 +163,8 @@ void FBuccaneerCommonModule::SendHTTPWithResponse(FString URL, TSharedPtr<FJsonO
                 if (EHttpResponseCodes::IsOk(HttpResponse->GetResponseCode()))
                 {
                     this->HandleResponse(ResponseStr);
-                    UE_LOG(BuccaneerCommon, VeryVerbose, TEXT("Push event response: code=%d response=%s"),
-                        HttpResponse->GetResponseCode(), *ResponseStr);
+                    // UE_LOG(BuccaneerCommon, VeryVerbose, TEXT("Push event response: code=%d response=%s"),
+                    //     HttpResponse->GetResponseCode(), *ResponseStr);
                 }
                 else
                 {

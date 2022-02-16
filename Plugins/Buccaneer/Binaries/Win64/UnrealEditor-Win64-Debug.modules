@@ -1,9 +1,0 @@
-{
-	"BuildId": "5582d5cb-0c2f-47d3-8ff5-7845b186baa2",
-	"Modules": 
-	{
-		"BuccaneerCommon": "UnrealEditor-BuccaneerCommon-Win64-Debug.dll",
-		"SemanticEventEmitter": "UnrealEditor-SemanticEventEmitter-Win64-Debug.dll",
-		"TimeSeriesDataEmitter": "UnrealEditor-TimeSeriesDataEmitter-Win64-Debug.dll"
-	}
-}

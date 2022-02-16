@@ -109,12 +109,7 @@ void FTimeSeriesDataEmitterModule::Tick(float DeltaTime)
     else 
     {
         double GameThreadTime = FPlatformTime::ToMilliseconds(GGameThreadTime);
-        // UE_LOG(TimeSeriesDataEmitter, Warning, TEXT("%d"), GRHIDeviceId);
-        double GPUFrameTime = 0;
-        if(GRHIDeviceId == 0)
-        {
-            GPUFrameTime = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(GRHIDeviceId));
-        }
+        double GPUFrameTime = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0));
 	    double RenderThreadTime = FPlatformTime::ToMilliseconds(GRenderThreadTime);
 	    double RHIThreadTime = FPlatformTime::ToMilliseconds(GRHIThreadTime);
 
@@ -146,17 +141,20 @@ void FTimeSeriesDataEmitterModule::ComputeUsedMemory()
 
     TArray<FStatMessage> Stats;
 	GetPermanentStats(Stats);
+
 	FName NAME_STATGROUP_RHI(FStatGroup_STATGROUP_RHI::GetGroupName());
-	UsedGPUMemory = 0;
+	int64 TotalMemory = 0;
 	for (int32 Index = 0; Index < Stats.Num(); Index++)
 	{
 		FStatMessage const& Meta = Stats[Index];
 		FName LastGroup = Meta.NameAndInfo.GetGroupName();
 		if (LastGroup == NAME_STATGROUP_RHI && Meta.NameAndInfo.GetFlag(EStatMetaFlags::IsMemory))
 		{
-			UsedGPUMemory += Meta.GetValue_double();
+			TotalMemory += Meta.GetValue_int64();
 		}
 	}
+	UsedGPUMemory = (double) (TotalMemory / 1024.f / 1024.f);
+    // UE_LOG(TimeSeriesDataEmitter, VeryVerbose, TEXT("Used GPU Memory: %.3fMB"), UsedGPUMemory);
 }
 
 void FTimeSeriesDataEmitterModule::PushStatsHTTP() 
