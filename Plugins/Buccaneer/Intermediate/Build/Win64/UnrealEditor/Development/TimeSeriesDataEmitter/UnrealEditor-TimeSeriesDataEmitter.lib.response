@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-TimeSeriesDataEmitter.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"..\Intermediate\Build\Win64\UnrealEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"..\Plugins\Buccaneer\Intermediate\Build\Win64\UnrealEditor\Development\TimeSeriesDataEmitter\TimeSeriesDataEmitter.cpp.obj"
+"..\Intermediate\Build\Win64\UnrealEditor\Development\Default.rc2.res"
+/OUT:"..\Plugins\Buccaneer\Intermediate\Build\Win64\UnrealEditor\Development\TimeSeriesDataEmitter\UnrealEditor-TimeSeriesDataEmitter.lib"

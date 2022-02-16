@@ -1,0 +1,9 @@
+{
+	"BuildId": "2c7da410-0ec4-4ebb-ad05-9950e000a996",
+	"Modules": 
+	{
+		"BuccaneerCommon": "UE4Editor-BuccaneerCommon.dll",
+		"SemanticEventEmitter": "UE4Editor-SemanticEventEmitter.dll",
+		"TimeSeriesDataEmitter": "UE4Editor-TimeSeriesDataEmitter.dll"
+	}
+}

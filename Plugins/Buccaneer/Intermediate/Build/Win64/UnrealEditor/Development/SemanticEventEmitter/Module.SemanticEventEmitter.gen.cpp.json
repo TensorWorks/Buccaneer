@@ -1,0 +1,18 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\intermediate\\build\\win64\\unrealeditor\\development\\semanticeventemitter\\module.semanticeventemitter.gen.cpp",
+        "ProvidedModule": "",
+        "PCH": "d:\\perforce\\william.belcher_dev-tw\\engine\\intermediate\\build\\win64\\unrealeditor\\development\\engine\\sharedpch.engine.shadowerrors.h.pch",
+        "Includes": [
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\intermediate\\build\\win64\\unrealeditor\\development\\semanticeventemitter\\definitions.semanticeventemitter.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\intermediate\\build\\win64\\unrealeditor\\inc\\semanticeventemitter\\semanticeventblueprintfunctionlibrary.gen.cpp",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\source\\semanticeventemitter\\public\\semanticeventblueprintfunctionlibrary.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\source\\semanticeventemitter\\public\\semanticeventemitter.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\intermediate\\build\\win64\\unrealeditor\\inc\\semanticeventemitter\\semanticeventblueprintfunctionlibrary.generated.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\intermediate\\build\\win64\\unrealeditor\\inc\\semanticeventemitter\\semanticeventemitter.init.gen.cpp"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

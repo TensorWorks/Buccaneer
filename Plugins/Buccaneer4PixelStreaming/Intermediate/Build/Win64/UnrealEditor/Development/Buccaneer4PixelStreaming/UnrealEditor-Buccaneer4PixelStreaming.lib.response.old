@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-Buccaneer4PixelStreaming.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"D:\Perforce\William.Belcher_Dev-TW\Engine\Intermediate\Build\Win64\UnrealEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"D:\Perforce\William.Belcher_Dev-TW\Engine\Plugins\Buccaneer4PixelStreaming\Intermediate\Build\Win64\UnrealEditor\Development\Buccaneer4PixelStreaming\Buccaneer4PixelStreaming.cpp.obj"
+"D:\Perforce\William.Belcher_Dev-TW\Engine\Intermediate\Build\Win64\UnrealEditor\Development\Default.rc2.res"
+/OUT:"D:\Perforce\William.Belcher_Dev-TW\Engine\Plugins\Buccaneer4PixelStreaming\Intermediate\Build\Win64\UnrealEditor\Development\Buccaneer4PixelStreaming\UnrealEditor-Buccaneer4PixelStreaming.lib"

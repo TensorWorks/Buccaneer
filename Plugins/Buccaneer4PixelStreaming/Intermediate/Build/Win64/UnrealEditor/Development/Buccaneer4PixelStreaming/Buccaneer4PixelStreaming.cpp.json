@@ -1,0 +1,28 @@
+{
+    "Version": "1.1",
+    "Data": {
+        "Source": "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer4pixelstreaming\\source\\buccaneer4pixelstreaming\\private\\buccaneer4pixelstreaming.cpp",
+        "ProvidedModule": "",
+        "PCH": "d:\\perforce\\william.belcher_dev-tw\\engine\\intermediate\\build\\win64\\unrealeditor\\development\\engine\\sharedpch.engine.shadowerrors.h.pch",
+        "Includes": [
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer4pixelstreaming\\intermediate\\build\\win64\\unrealeditor\\development\\buccaneer4pixelstreaming\\definitions.buccaneer4pixelstreaming.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer4pixelstreaming\\source\\buccaneer4pixelstreaming\\public\\buccaneer4pixelstreaming.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\buccaneer\\source\\buccaneercommon\\public\\buccaneercommon.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\source\\runtime\\online\\http\\public\\interfaces\\ihttprequest.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\source\\runtime\\online\\http\\public\\interfaces\\ihttpbase.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\source\\runtime\\online\\http\\public\\interfaces\\ihttpresponse.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\source\\runtime\\online\\http\\public\\httpmodule.h",
+            "c:\\program files (x86)\\windows kits\\10\\include\\10.0.19041.0\\ucrt\\memory.h",
+            "c:\\program files (x86)\\microsoft visual studio\\2019\\community\\vc\\tools\\msvc\\14.29.30133\\include\\string",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\media\\pixelstreaming\\source\\pixelstreaming\\public\\pixelstreamingdelegates.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\media\\pixelstreaming\\source\\pixelstreaming\\public\\pixelstreamingplayerid.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\media\\pixelstreaming\\intermediate\\build\\win64\\unrealeditor\\inc\\pixelstreaming\\pixelstreamingdelegates.generated.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\media\\pixelstreaming\\source\\pixelstreaming\\public\\ipixelstreamingmodule.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\source\\runtime\\inputdevice\\public\\iinputdevicemodule.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\source\\runtime\\inputdevice\\public\\iinputdevice.h",
+            "d:\\perforce\\william.belcher_dev-tw\\engine\\plugins\\media\\pixelstreaming\\source\\pixelstreaming\\public\\ipixelstreamingaudiosink.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

@@ -1,0 +1,8 @@
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Intermediate\Build\Win64\UE4Editor\Development\SemanticEventEmitter\Definitions.SemanticEventEmitter.h
+D:/Perforce/William.Belcher_OFFICE_4_MAIN/Engine/Plugins/Buccaneer/Intermediate/Build/Win64/UE4Editor/Inc/SemanticEventEmitter/SemanticEventBlueprintFunctionLibrary.gen.cpp
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\CoreUObject\Public\UObject/GeneratedCppIncludes.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\CoreUObject\Public\UObject/MetaData.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Source\SemanticEventEmitter/Public/SemanticEventBlueprintFunctionLibrary.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Source\SemanticEventEmitter\Public\SemanticEventEmitter.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Intermediate\Build\Win64\UE4Editor\Inc\SemanticEventEmitter\SemanticEventBlueprintFunctionLibrary.generated.h
+D:/Perforce/William.Belcher_OFFICE_4_MAIN/Engine/Plugins/Buccaneer/Intermediate/Build/Win64/UE4Editor/Inc/SemanticEventEmitter/SemanticEventEmitter.init.gen.cpp

@@ -1,0 +1,13 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.SemanticEventEmitter.cpp.obj": [
+			"SemanticEventEmitter.cpp.obj",
+			"SemanticEventBlueprintFunctionLibrary.cpp.obj"
+		],
+		"Module.SemanticEventEmitter.gen.cpp.obj": [
+			"SemanticEventBlueprintFunctionLibrary.gen.cpp.obj",
+			"SemanticEventEmitter.init.gen.cpp.obj"
+		]
+	}
+}

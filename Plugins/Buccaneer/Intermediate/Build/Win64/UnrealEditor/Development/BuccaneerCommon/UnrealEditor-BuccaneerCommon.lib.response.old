@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-BuccaneerCommon.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"D:\Perforce\William.Belcher_Dev-TW\Engine\Intermediate\Build\Win64\UnrealEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h.obj"
+"D:\Perforce\William.Belcher_Dev-TW\Engine\Plugins\Buccaneer\Intermediate\Build\Win64\UnrealEditor\Development\BuccaneerCommon\BuccaneerCommon.cpp.obj"
+"D:\Perforce\William.Belcher_Dev-TW\Engine\Intermediate\Build\Win64\UnrealEditor\Development\Default.rc2.res"
+/OUT:"D:\Perforce\William.Belcher_Dev-TW\Engine\Plugins\Buccaneer\Intermediate\Build\Win64\UnrealEditor\Development\BuccaneerCommon\UnrealEditor-BuccaneerCommon.lib"

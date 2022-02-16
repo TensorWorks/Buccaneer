@@ -1,0 +1,11 @@
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Intermediate\Build\Win64\UE4Editor\Development\TimeSeriesDataEmitter\Definitions.TimeSeriesDataEmitter.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Source\TimeSeriesDataEmitter\Public\TimeSeriesDataEmitter.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Source\SemanticEventEmitter\Public\SemanticEventEmitter.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Plugins\Buccaneer\Source\BuccaneerCommon\Public\BuccaneerCommon.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\Online\HTTP\Public\Interfaces/IHttpRequest.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\Online\HTTP\Public\Interfaces/IHttpBase.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\Online\HTTP\Public\Interfaces/IHttpResponse.h
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\Online\HTTP\Public\HttpModule.h
+C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt\memory.h
+C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE\string
+D:\Perforce\William.Belcher_OFFICE_4_MAIN\Engine\Source\Runtime\Core\Public\Stats/StatsData.h
