@@ -24,9 +24,24 @@ The time-series data emitter which collects real-time performance data and expor
 
 * ### A Semantic Event Emitter
 The semantic event emitter facilitates emitting arbitrary and user-defined discrete event information for consumption by [Promtail](https://grafana.com/docs/loki/latest/clients/promtail/). The consumed logs are then displayed as annotations on the Grafana dashboard through the use of [Loki](https://grafana.com/oss/loki/).
+
+<p align="center">
+    <img src="Images/Buccaneer.png">
+</p>
+
 <br/></br>
 
 # Using Buccaneer
+## How do I use these custom plugins in my Unreal Project?
+* Adding to your project
+    * Navigate to your project folder which contains [ProjectName].uproject
+    * Copy the `Plugins` folder to this directory
+<br></br>
+* Adding to the engine (if building the engine from source)
+    * Navigate to the plugins folder of the Unreal Engine which is `Engine/Plugins`
+    * Place the `Buccaneer` and `Buccaneer4PixelStreaming` folders into this directory
+<br></br>
+
 ## Using the Semantic Event Emitter
 Interacting with the semantic event emitter can be done with the `Emit Semantic Event` blueprint node 
 
@@ -41,7 +56,7 @@ or with the `EmitSemanticEvent(FString Level, FString Event)` function. In order
 </p>
 
 ## Configuration
-The majority of the configurations provided can be left as-is. However, line 19 of `promtail-local-config.yaml` requires you to configure the path to the log file of the events server. 
+The majority of the configurations provided can be left as-is. However, [Line 19 of `promtail-local-config.yaml`](https://github.com/Belchy06/Buccaneer/blob/48aff076edbfad76fe349c0de4d85e52f7b3d0c2/Configs/promtail-local-config.yaml#L19) requires you to configure the path to the log file of the events server. 
 
 ### Starting the Go Servers
 Both servers can be started by running their respective executables. 
