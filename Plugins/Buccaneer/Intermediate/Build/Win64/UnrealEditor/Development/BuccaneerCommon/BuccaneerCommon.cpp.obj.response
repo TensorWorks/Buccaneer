@@ -95,6 +95,7 @@
 /I Developer
 /I Developer\DirectoryWatcher\Public
 /I Editor\Documentation\Public
+/I Editor\MainFrame\Public
 /I Runtime\Projects\Public
 /I Runtime\SandboxFile\Public
 /I ..\Intermediate\Build\Win64\UnrealEditor\Inc\EditorFramework
@@ -144,8 +145,6 @@
 /I ..\Intermediate\Build\Win64\UnrealEditor\Inc\LevelEditor
 /I Editor\LevelEditor\Public
 /I Developer\Settings\Public
-/I ..\Intermediate\Build\Win64\UnrealEditor\Inc\IntroTutorials
-/I Editor\IntroTutorials\Public
 /I ..\Intermediate\Build\Win64\UnrealEditor\Inc\HeadMountedDisplay
 /I Runtime\HeadMountedDisplay\Public
 /I ..\Intermediate\Build\Win64\UnrealEditor\Inc\VREditor
@@ -271,10 +270,10 @@
 /I ThirdParty\PhysX3\PhysX_3.4\Include\geometry
 /I "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\INCLUDE"
 /I "C:\Program Files (x86)\Windows Kits\NETFXSDK\4.6.2\include\um"
-/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\ucrt"
-/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\shared"
-/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\um"
-/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.19041.0\winrt"
+/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\ucrt"
+/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\shared"
+/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\um"
+/I "C:\Program Files (x86)\Windows Kits\10\include\10.0.18362.0\winrt"
 /FI"..\Intermediate\Build\Win64\UnrealEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h"
 /FI"..\Plugins\Buccaneer\Intermediate\Build\Win64\UnrealEditor\Development\BuccaneerCommon\Definitions.BuccaneerCommon.h"
 /Yu"..\Intermediate\Build\Win64\UnrealEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.h"

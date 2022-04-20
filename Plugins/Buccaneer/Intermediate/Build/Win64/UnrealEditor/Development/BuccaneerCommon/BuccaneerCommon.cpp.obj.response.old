@@ -5,6 +5,7 @@
 /I Runtime\TraceLog\Public
 /I Runtime\Core\Public
 /I ..\Intermediate\Build\Win64\UnrealEditor\Inc\Engine
+/I ..\Shaders\Shared
 /I Runtime\Engine\Classes
 /I Runtime\Engine\Public
 /I ..\Intermediate\Build\Win64\UnrealEditor\Inc\CoreOnline

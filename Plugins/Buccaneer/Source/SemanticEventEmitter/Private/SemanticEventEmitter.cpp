@@ -18,9 +18,9 @@ FSemanticEventEmitterModule* FSemanticEventEmitterModule::SemanticEmitterModule 
 void FSemanticEventEmitterModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-	
 	FBuccaneerCommonModule* BuccaneerCommonModule = FBuccaneerCommonModule::GetModule();
-    if(!BuccaneerCommonModule->bEnableEvents)
+	
+    if(!BuccaneerCommonModule->CVarBuccaneerEnableEvents->GetBool())
     {
         return;
     }
@@ -71,7 +71,7 @@ FSemanticEventEmitterModule* FSemanticEventEmitterModule::GetModule()
 
 void FSemanticEventEmitterModule::PushEventHTTP(FString Level, FString Event) {
 	FBuccaneerCommonModule* Module = FBuccaneerCommonModule::GetModule();
-    if(Module)
+    if(Module && Module->CVarBuccaneerEnableStats->GetBool())
     {
 		JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *Module->ID)));
 		JsonObject->SetField("level", MakeShared<FJsonValueString>((TEXT("%s"), *Level)));
@@ -81,7 +81,7 @@ void FSemanticEventEmitterModule::PushEventHTTP(FString Level, FString Event) {
     }
 	else
 	{
-		UE_LOG(SemanticEventEmitter, Error, TEXT("BuccaneerCommonModule not loaded"));
+		UE_LOG(SemanticEventEmitter, Error, TEXT("BuccaneerCommonModule not loaded / disabled"));
 	}
 }
 

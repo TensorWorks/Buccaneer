@@ -1,5 +1,3 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 #pragma once
 
 
@@ -10,6 +8,8 @@
 #include "HttpModule.h"
 #include "Dom/JsonObject.h"
 #include "Serialization/JsonWriter.h"
+#include "HAL/IConsoleManager.h"
+#include "Misc/CommandLine.h"
 
 #include <memory.h>
 #include <string>
@@ -21,7 +21,6 @@ DECLARE_LOG_CATEGORY_EXTERN(BuccaneerCommon, Log, All);
 class BUCCANEERCOMMON_API FBuccaneerCommonModule : public IModuleInterface
 {
 public:
-
 	/** IModuleInterface implementation */
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
@@ -30,7 +29,7 @@ public:
 
     void SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject);
 	void SendHTTPWithResponse(FString URL, TSharedPtr<FJsonObject> JsonObject);
-	void ParseCommandLineOption(const TCHAR* Match, bool& Option);
+	void ParseCommandLineOption(const TCHAR* Match, IConsoleVariable* CVar);
 
 	FOnSetupComplete SetupComplete;
 	
@@ -38,19 +37,20 @@ public:
 	FString StatsEmitterURL;
 	FString EventEmitterURL;
 
-	bool bEnableStats = true;
-	bool bEnableEvents = true;
 	bool bSetupCalled = false;
 	
 	TSharedPtr<FJsonObject> MetadataJson;
 
+	IConsoleVariable* CVarBuccaneerEnableStats;
+	IConsoleVariable* CVarBuccaneerEnableEvents;
+
 private:
-	
+
+	void Setup();	
 	void RegisterMetadata(FString Key, FString Value);
 	void HandleResponse(FString ResponseString);
 
-	static FBuccaneerCommonModule* BuccaneerCommonModule;
-	
+	static FBuccaneerCommonModule* BuccaneerCommonModule;	
 };
 
 

@@ -18,9 +18,8 @@ DEFINE_LOG_CATEGORY(TimeSeriesDataEmitter);
 void FTimeSeriesDataEmitterModule::StartupModule()
 {
 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
-	// TODO: Parse command line
     BuccaneerCommonModule = FBuccaneerCommonModule::GetModule();
-    if(!BuccaneerCommonModule->bEnableStats)
+    if(!BuccaneerCommonModule->CVarBuccaneerEnableStats->GetBool())
     {
         return;
     }
@@ -86,7 +85,7 @@ bool FTimeSeriesDataEmitterModule::IsTickableInEditor() const
 
 void FTimeSeriesDataEmitterModule::Tick(float DeltaTime) 
 {
-	 if(!BuccaneerCommonModule->bEnableStats || !bIsReady) 
+	 if(!BuccaneerCommonModule->CVarBuccaneerEnableStats->GetBool() || !bIsReady) 
     {
         // Performance profiling hasn't been inititialized. Don't continue
         return;

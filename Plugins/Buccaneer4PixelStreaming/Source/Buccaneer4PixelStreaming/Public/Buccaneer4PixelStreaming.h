@@ -13,7 +13,6 @@
 
 DECLARE_LOG_CATEGORY_EXTERN(BuccaneerPixelStreaming, Log, All);
 
-
 class FBuccaneer4PixelStreamingModule : public IModuleInterface
 {
 public:
@@ -25,6 +24,8 @@ public:
 	UFUNCTION()
 	void HandlePlayerDisconnect(FPixelStreamingPlayerId PlayerId, bool WasQualityController);
 	void ConsumeStat(FPixelStreamingPlayerId PlayerId, FName StatName, float StatValue);
+
+	IConsoleVariable* CVarBuccaneer4PixelStreamingEnableStats;
 	
 private:
 	void OnStreamerReady(IPixelStreamingModule& Module);
@@ -39,6 +40,4 @@ private:
 	TSharedPtr<FJsonObject> JsonObject; 
 	TSharedPtr<FJsonObject> SetupJson; 
     TSharedPtr<FJsonObject> MetricJson;
-
-	bool bEnableStats = true;
 };

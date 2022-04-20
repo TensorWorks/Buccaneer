@@ -1,4 +1,4 @@
-module C/Users/Will/Desktop/GoAPI
+module EventsServer
 
 go 1.16
 

@@ -9,12 +9,23 @@
 
 DEFINE_LOG_CATEGORY(BuccaneerPixelStreaming);
 
+namespace Buccaneer4PixelStreaming
+{
+	
+}
 
 void FBuccaneer4PixelStreamingModule::StartupModule()
 {
+
+	CVarBuccaneer4PixelStreamingEnableStats = IConsoleManager::Get().RegisterConsoleVariable(
+		TEXT("Buccaneer4PixelStreaming.EnableStats"),
+		true,
+		TEXT("Disables the collection and logging of Pixel Streaming stats with Buccaneer"),
+		ECVF_Default);
+
 	BuccaneerCommonModule = FBuccaneerCommonModule::GetModule();
-	BuccaneerCommonModule->ParseCommandLineOption(TEXT("Buccaneer4PixelStreamingEnableStats"), bEnableStats);
-	if(!bEnableStats)
+	BuccaneerCommonModule->ParseCommandLineOption(TEXT("Buccaneer4PixelStreamingEnableStats"), CVarBuccaneer4PixelStreamingEnableStats);
+	if(!CVarBuccaneer4PixelStreamingEnableStats->GetBool())
 	{
 		return;
 	}

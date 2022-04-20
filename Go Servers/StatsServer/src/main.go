@@ -1,7 +1,7 @@
 package main
 
 import (
-	"C/Users/Will/Desktop/StatsAPIv2/collections"
+	"StatsServer/collections"
 	"encoding/json"
 	"errors"
 	"fmt"

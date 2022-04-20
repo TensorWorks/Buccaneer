@@ -1,4 +1,4 @@
-module C/Users/Will/Desktop/StatsAPIv2
+module StatsServer
 
 go 1.16
 
