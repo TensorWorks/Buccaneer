@@ -7,14 +7,14 @@ volumes:
 
 services:
   unreal:
-    image: "app"
+    image: "tensorworks/buccaneerdemo-application"
     container_name: unreal
     networks:
     - buccaneer
     runtime: nvidia
 
   cirrus:
-    image: "cirrus"
+    image: "tensorworks/buccaneerdemo-cirrus"
     container_name: cirrus
     ports:
     - "80:80"
@@ -23,7 +23,7 @@ services:
     - buccaneer
 
   statsserver:
-    image: "statsserver"
+    image: "tensorworks/buccaneerdemo-statsserver"
     container_name: stats
     ports:
     - "8000:8000"
@@ -31,7 +31,7 @@ services:
     - buccaneer
 
   eventsserver:
-    image: "eventsserver"
+    image: "tensorworks/buccaneerdemo-eventsserver"
     container_name: events
     ports:
     - "8080:8080"
