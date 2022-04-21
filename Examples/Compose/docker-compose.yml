@@ -11,81 +11,73 @@ services:
     container_name: unreal
     networks:
     - buccaneer
-    deploy:
-      resources:
-        reservations:
-          devices:
-          - driver: nvidia
-            capabilities: [gpu]
-            count: 1
+    runtime: nvidia
 
-  # statsserver:
-  #   image: "statsserver"
-  #   container_name: stats
-  #   ports:
-  #   - "8000:8000"
-  #   networks:
-  #   - buccaneer
+  cirrus:
+    image: "cirrus"
+    container_name: cirrus
+    ports:
+    - "80:80"
+    - "8888:8888"
+    networks:
+    - buccaneer
 
-  # eventsserver:
-  #   image: "eventsserver"
-  #   container_name: events
-  #   ports:
-  #   - "8080:8080"
-  #   volumes:
-  #   - "eventslogs:/app"
-  #   networks:
-  #   - buccaneer
+  statsserver:
+    image: "statsserver"
+    container_name: stats
+    ports:
+    - "8000:8000"
+    networks:
+    - buccaneer
 
-  # prometheus:
-  #   image: "prom/prometheus"
-  #   container_name: prometheus
-  #   ports:
-  #   - "9090:9090"
-  #   volumes:
-  #   - "../../Configs/prometheus.yml:/etc/prometheus/prometheus.yml"
-  #   networks:
-  #   - buccaneer
+  eventsserver:
+    image: "eventsserver"
+    container_name: events
+    ports:
+    - "8080:8080"
+    volumes:
+    - "eventslogs:/app"
+    networks:
+    - buccaneer
 
-  # grafana:
-  #   image: grafana/grafana
-  #   container_name: grafana
-  #   ports:
-  #   - "3000:3000"
-  #   networks:
-  #   - buccaneer
-  #   volumes:
-  #   - "../../Configs/grafana-dashboard-config.yaml:/etc/grafana/provisioning/dashboards/grafana-dashboard-config.yaml"
-  #   - "../../Configs/grafana-datasource-config.yaml:/etc/grafana/provisioning/datasources/grafana-datasource-config.yaml"
-  #   - "../../Dashboards/:/etc/dashboards"
+  prometheus:
+    image: "prom/prometheus"
+    container_name: prometheus
+    ports:
+    - "9090:9090"
+    volumes:
+    - "../../Configs/prometheus.yml:/etc/prometheus/prometheus.yml"
+    networks:
+    - buccaneer
 
-  # loki:
-  #   image: grafana/loki
-  #   container_name: loki
-  #   ports:
-  #   - "3100:3100"
-  #   volumes:
-  #   - "../../Configs/loki-local-config.yaml:/etc/loki/loki-local-config.yaml"
-  #   networks:
-  #   - buccaneer
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+    - "3000:3000"
+    networks:
+    - buccaneer
+    volumes:
+    - "../../Configs/grafana-dashboard-config.yaml:/etc/grafana/provisioning/dashboards/grafana-dashboard-config.yaml"
+    - "../../Configs/grafana-datasource-config.yaml:/etc/grafana/provisioning/datasources/grafana-datasource-config.yaml"
+    - "../../Dashboards/:/etc/dashboards"
 
-  # promtail:
-  #   image: grafana/promtail
-  #   container_name: promtail
-  #   command: -config.file=/etc/promtail/promtail-local-config.yaml
-  #   volumes:
-  #   - "../../Configs/promtail-local-config.yaml:/etc/promtail/promtail-local-config.yaml"
-  #   - "eventslogs:/EventsServer"
-  #   networks:
-  #   - buccaneer
+  loki:
+    image: grafana/loki
+    container_name: loki
+    ports:
+    - "3100:3100"
+    volumes:
+    - "../../Configs/loki-local-config.yaml:/etc/loki/loki-local-config.yaml"
+    networks:
+    - buccaneer
 
-  # test:
-  #   image: nvidia/cuda:10.2-base
-  #   command: nvidia-smi
-  #   deploy:
-  #     resources:
-  #       reservations:
-  #         devices:
-  #           - driver: nvidia
-  #             count: 1
-  #             capabilities: [gpu]
+  promtail:
+    image: grafana/promtail
+    container_name: promtail
+    command: -config.file=/etc/promtail/promtail-local-config.yaml
+    volumes:
+    - "../../Configs/promtail-local-config.yaml:/etc/promtail/promtail-local-config.yaml"
+    - "eventslogs:/EventsServer"
+    networks:
+    - buccaneer

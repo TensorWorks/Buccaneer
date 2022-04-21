@@ -239,4 +239,5 @@ Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/**
 !/Plugins/**
 !/Examples/**
 
+/Examples/Application/**
 
