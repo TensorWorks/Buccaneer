@@ -8,14 +8,13 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
-
-// collector (1) -> instance (1) -> players (many)
 
 type Collector struct {
 	// metadata is labels that don't change during runtime
@@ -36,7 +35,7 @@ type Metric struct {
 type ArbitraryJson map[string]interface{}
 
 var (
-	Collectors = make(map[string]Collector)
+	Collectors sync.Map
 )
 
 func (collector *Collector) Describe(ch chan<- *prometheus.Desc) {
@@ -62,13 +61,15 @@ func (collector *Collector) Collect(ch chan<- prometheus.Metric) {
 
 func removeStaleCollectors() {
 	for {
-		for key, collector := range Collectors {
-			if time.Now().Unix()-*collector.lastUpdateTime > 60 {
+		Collectors.Range(func(key, collector interface{}) bool {
+			if time.Now().Unix()-*collector.(Collector).lastUpdateTime > 10 {
 				log.Printf("Deregistering collector for instance \"%s\"", key)
-				prometheus.Unregister(&collector)
-				delete(Collectors, key)
+				v := collector.(Collector)
+				prometheus.Unregister(&v)
+				Collectors.Delete(key)
 			}
-		}
+			return true
+		})
 		time.Sleep(5 * time.Second)
 	}
 }
@@ -123,9 +124,9 @@ func main() {
 
 		if id, exists := collector.metadata["id"]; exists {
 			// ID was provided
-			if _, exists := Collectors[id]; exists {
+			if result, exists := Collectors.Load(id); exists {
 				// Setup has been called a second time for this instance. update the original collector with the new information
-				collector = Collectors[id]
+				collector = result.(Collector)
 				if len(collector.metrics) > 0 {
 					prometheus.Unregister(&collector)
 				}
@@ -176,7 +177,7 @@ func main() {
 			}
 		}
 
-		Collectors[id] = collector
+		Collectors.Store(id, collector)
 		if len(collector.metrics) > 0 {
 			prometheus.MustRegister(&collector)
 		}
@@ -185,7 +186,6 @@ func main() {
 		res.Header().Set("Content-Type", "application/json")
 		resp := make(map[string]string)
 		resp["id"] = id
-		// json.NewEncoder(res).Encode(responseData)
 		jsonResp, err := json.Marshal(resp)
 		if err != nil {
 			log.Fatalf("Error happened in JSON marshal. Err: %s", err)
@@ -208,26 +208,26 @@ func main() {
 			http.Error(res, "ID not provided in stats payload", http.StatusBadRequest)
 			return
 		}
-		if _, exists := Collectors[id.(string)]; !exists {
+		if _, exists := Collectors.Load(id.(string)); !exists {
 			http.Error(res, "Setup hasn't been called from this instance", http.StatusBadRequest)
 			return
 		}
 
 		for k, v := range payload {
-			if _, exists := Collectors[id.(string)].metrics[k]; !exists || k == "id" {
+			if _, exists := Collectors.Load(id.(string)); !exists || k == "id" {
 				continue
 			}
 			switch i := v.(type) {
 			case float64:
-				if !Collectors[id.(string)].metrics[k].PerPlayer {
-					Collectors[id.(string)].metrics[k].Value.Set("", i)
+				if result, _ := Collectors.Load(id.(string)); !result.(Collector).metrics[k].PerPlayer {
+					result.(Collector).metrics[k].Value.Set("", i)
 				} else {
 					http.Error(res, fmt.Sprintf("A per player metric (%s) was missing the player number", k), http.StatusBadRequest)
 					return
 				}
 			case int:
-				if !Collectors[id.(string)].metrics[k].PerPlayer {
-					Collectors[id.(string)].metrics[k].Value.Set("", float64(i))
+				if result, _ := Collectors.Load(id.(string)); !result.(Collector).metrics[k].PerPlayer {
+					result.(Collector).metrics[k].Value.Set("", float64(i))
 				} else {
 					http.Error(res, fmt.Sprintf("A per player metric (%s) was missing the player number", k), http.StatusBadRequest)
 					return
@@ -235,12 +235,14 @@ func main() {
 			case interface{}:
 				for _, element := range v.([]interface{}) {
 					for key, value := range element.(map[string]interface{}) {
-						Collectors[id.(string)].metrics[k].Value.Set(key, value)
+						result, _ := Collectors.Load(id.(string))
+						result.(Collector).metrics[k].Value.Set(key, value)
 					}
 				}
 			}
 		}
-		*Collectors[id.(string)].lastUpdateTime = time.Now().Unix()
+		collector, _ := Collectors.Load(id.(string))
+		*collector.(Collector).lastUpdateTime = time.Now().Unix()
 		res.WriteHeader(http.StatusOK)
 	})
 
@@ -259,9 +261,10 @@ func main() {
 			return
 		}
 
-		if col, exists := Collectors[id.(string)]; exists {
-			prometheus.Unregister(&col)
-			delete(Collectors, id.(string))
+		if col, exists := Collectors.Load(id.(string)); exists {
+			v := col.(Collector)
+			prometheus.Unregister(&v)
+			Collectors.Delete(id.(string))
 		} else {
 			http.Error(res, "Provided ID didn't exist", http.StatusBadRequest)
 			return
@@ -291,9 +294,9 @@ func main() {
 			return
 		}
 
-		if collector, exists := Collectors[id.(string)]; exists {
-			prometheus.Unregister(&collector)
-			for _, metric := range collector.metrics {
+		if collector, exists := Collectors.Load(id.(string)); exists {
+			prometheus.Unregister(collector.(*Collector))
+			for _, metric := range collector.(Collector).metrics {
 				if metric.PerPlayer {
 					for el := metric.Value.Front(); el != nil; el = el.Next() {
 						if el.Key == playerId.(string) {
@@ -304,8 +307,8 @@ func main() {
 					}
 				}
 			}
-			Collectors[id.(string)] = collector
-			prometheus.MustRegister(&collector)
+			Collectors.Store(id.(string), collector)
+			prometheus.MustRegister(collector.(*Collector))
 		}
 
 		res.WriteHeader(http.StatusOK)
