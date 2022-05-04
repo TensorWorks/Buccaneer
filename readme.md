@@ -96,8 +96,8 @@ The following launch arguments must be specified when launching an Unreal Engine
 The following CVars can be used to toggle on and off aspects of Buccaneer at runtime:
 | Command Line Argument | Default Value| Description |
 | --------------------- | ------------ |------------ |
-| -Buccaneer.EnableStats=\<1/0> | true | Whether the pushing of performance stats is enabled |
-| -Buccaneer.EnableEvents=\<1/0> | true | Whether the pushing of semantic events is enabled |
+| Buccaneer.EnableStats=\<1/0> | 1 | Whether the pushing of performance stats is enabled |
+| Buccaneer.EnableEvents=\<1/0> | 1 | Whether the pushing of semantic events is enabled |
 
 <br></br>
 
