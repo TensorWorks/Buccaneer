@@ -1,4 +1,4 @@
-FROM ghcr.io/epicgames/unreal-engine:dev-4.27.2
+FROM ghcr.io/epicgames/unreal-engine:runtime-pixel-streaming
 
 # Copy UE4 project
 COPY --chown=ue4:ue4 ./LinuxNoEditor /home/ue4/project
