@@ -7,4 +7,4 @@ EXPOSE 8888
 
 USER ue4
 RUN ["chmod", "+x", "/home/ue4/project/TP4.sh"]
- ENTRYPOINT ["/home/ue4/project/TP4.sh",  "-StatsEmitterURL=http://stats:8000",  "-EventEmitterURL=http://events:8080", "-RenderOffScreen", "-Unattended", "-Vulkan", "-PixelStreamingURL=ws://cirrus:8888", "-ResX=1920", "-ResY=1080", "-ForceRes" ]
+ ENTRYPOINT ["/usr/bin/entrypoint.sh", "/home/ue4/project/TP4.sh",  "-StatsEmitterURL=http://127.0.0.1:8000",  "-EventEmitterURL=http://127.0.0.1:8080", "-RenderOffScreen", "-Unattended", "-Vulkan", "-PixelStreamingURL=ws://127.0.0.1:8888", "-ResX=1920", "-ResY=1080", "-ForceRes" ]
