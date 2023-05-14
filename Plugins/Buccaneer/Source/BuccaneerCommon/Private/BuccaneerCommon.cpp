@@ -10,7 +10,6 @@ FBuccaneerCommonModule* FBuccaneerCommonModule::BuccaneerCommonModule = nullptr;
 
 void FBuccaneerCommonModule::StartupModule()
 {
-    Setup();
     CVarBuccaneerEnableStats = IConsoleManager::Get().RegisterConsoleVariable(
         TEXT("Buccaneer.EnableStats"),
         true,
@@ -22,7 +21,7 @@ void FBuccaneerCommonModule::StartupModule()
         true,
         TEXT("Disables the collection and logging of semantic events"),
         ECVF_Default);
-
+    Setup();
 }
 
 
