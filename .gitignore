@@ -235,6 +235,7 @@ Engine/Extras/ThirdPartyNotUE/SDKs/HostLinux/**
 !/Configs/**
 !/Dashboards/**
 !/Go Servers/**
+!/Server/**
 !/Images/**
 !/Plugins/**
 !/Examples/**
