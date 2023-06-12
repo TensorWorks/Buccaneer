@@ -155,8 +155,8 @@ func main() {
 
 					metricJson := value.(map[string]interface{})
 					collector.metrics[key] = metric{
-						description: prometheus.NewDesc(key, metricJson["desc"].(string), nil, collector.metadata),
-						value:       metricJson["val"].(float64),
+						description: prometheus.NewDesc(key, metricJson["description"].(string), nil, collector.metadata),
+						value:       metricJson["value"].(float64),
 					}
 				}
 			}
@@ -193,7 +193,7 @@ func main() {
 
 			if entry, ok := currCollector.(collector).metrics[key]; ok {
 				// update value of copy
-				entry.value = metricJson["val"].(float64)
+				entry.value = metricJson["value"].(float64)
 				// assign copy to metric
 				currCollector.(collector).metrics[key] = entry
 			}
