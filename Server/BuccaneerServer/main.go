@@ -1,10 +1,7 @@
 package main
 
 import (
-	"BuccaneerServer/collections"
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -12,98 +9,74 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
-type Collector struct {
-	// metadata is labels that don't change during runtime
+var (
+	// global map to store our collectors
+	collectors sync.Map
+)
+
+type collector struct {
+	// metadata are labels that don't change during runtime. Eg you could tag instances with
+	// their corresponding CL number to gain insight into performance regressions over time
 	metadata map[string]string
 
-	metrics map[string]Metric
+	// metrics contain both a long description and a value
+	metrics map[string]metric
 
+	// unix timestamp to keep track of when this collector was last updated.
+	// enables removal of stale collectors
 	lastUpdateTime *int64
 }
 
-type Metric struct {
-	Description *prometheus.Desc
-	Value       *collections.OrderedMap
-	ValueType   prometheus.ValueType
-	PerPlayer   bool
+type metric struct {
+	// long, human-readable, description
+	description *prometheus.Desc
+	//
+	value float64
 }
 
-type Event struct {
-	ID      string `json:"id" binding:"required"`
-	Level   string `json:"level" binding:"required"`
-	Message string `json:"message" binding:"required"`
-}
+type arbitraryJson map[string]interface{}
 
-type ArbitraryJson map[string]interface{}
-
-var (
-	Collectors sync.Map
-)
-
-func (collector *Collector) Describe(ch chan<- *prometheus.Desc) {
+func (collector *collector) Describe(ch chan<- *prometheus.Desc) {
 	for _, metric := range collector.metrics {
-		ch <- metric.Description
+		ch <- metric.description
 	}
 }
 
-func (collector *Collector) Collect(ch chan<- prometheus.Metric) {
+func (collector *collector) Collect(ch chan<- prometheus.Metric) {
 	for _, metric := range collector.metrics {
-		if metric.PerPlayer {
-			for el := metric.Value.Front(); el != nil; el = el.Next() {
-				ch <- prometheus.MustNewConstMetric(metric.Description, metric.ValueType, el.Value.(float64), el.Key.(string))
-			}
-		} else {
-			val, success := metric.Value.Get("")
-			if success {
-				ch <- prometheus.MustNewConstMetric(metric.Description, metric.ValueType, val.(float64))
-			}
-		}
+		ch <- prometheus.MustNewConstMetric(metric.description, prometheus.GaugeValue, metric.value)
 	}
 }
 
 func removeStaleCollectors() {
+	// sub-routine to remove stale collectors
 	for {
-		Collectors.Range(func(key, collector interface{}) bool {
-			if time.Now().Unix()-*collector.(Collector).lastUpdateTime > 10 {
+		collectors.Range(func(key, currCollector interface{}) bool {
+			collector := currCollector.(collector)
+			// TODO (belchy06): Perhaps this time should be configurable
+			if time.Now().Unix()-*collector.lastUpdateTime > 10 {
+				// Collector hasn't been update in X seconds, unregister and remove from our map
 				log.Printf("Deregistering collector for instance \"%s\"", key)
-				v := collector.(Collector)
-				prometheus.Unregister(&v)
-				Collectors.Delete(key)
+				prometheus.Unregister(&collector)
+				collectors.Delete(key)
 			}
 			return true
 		})
+
+		// sleep before running again
 		time.Sleep(5 * time.Second)
 	}
 }
 
-func GetValueType(ValueString string) (prometheus.ValueType, error) {
-	switch ValueString {
-	case "gauge":
-		return prometheus.GaugeValue, nil
-	case "counter":
-		return prometheus.CounterValue, nil
-	}
-	return prometheus.UntypedValue, errors.New("unknown value type")
-}
-
-func ToStringArray(in []interface{}) []string {
-	labelArr := make([]string, len(in))
-	for i, v := range in {
-		labelArr[i] = v.(string)
-	}
-	return labelArr
-}
-
 func main() {
-	// Sub routine to remove instances that haven't posted metrics in over 10 seconds
+	// start sub-routine
 	go removeStaleCollectors()
 
-	// Open the log file scraped by promtail
+	// either open or create the events log file scraped by promtail
 	fs, err := os.OpenFile("event.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		panic(err)
@@ -111,7 +84,7 @@ func main() {
 
 	defer fs.Close()
 
-	// Handler for when an instance posts a semantic event
+	// handler for when an instance posts an event
 	http.HandleFunc("/event", func(res http.ResponseWriter, req *http.Request) {
 		body, err := io.ReadAll(req.Body)
 		if err != nil {
@@ -119,11 +92,12 @@ func main() {
 			return
 		}
 
-		var payload ArbitraryJson
+		var payload arbitraryJson
 		json.Unmarshal([]byte(body), &payload)
 
+		// check the event json contains a level, message and id
 		if payload["Level"] == nil || payload["Message"] == nil || payload["ID"] == nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
+			http.Error(res, "Malformed event json. Ensure your message contains all the required fields", http.StatusBadRequest)
 			return
 		}
 
@@ -131,117 +105,9 @@ func main() {
 		_, _ = fs.WriteString("{" + "\"log\":\"level=" + payload["Level"].(string) + " ts=" + ts + " msg=\\\"" + payload["Message"].(string) + "\\\"\", \"stream\":\"" + payload["Level"].(string) + "\", \"time\":\"" + ts + "\", \"instance\":\"" + payload["ID"].(string) + "\"}\n")
 
 		res.WriteHeader(http.StatusOK)
-		res.Header().Set("Content-Type", "application/json")
-		resp := make(map[string]string)
-		resp["status"] = "success"
-		jsonResp, err := json.Marshal(resp)
-		if err != nil {
-			log.Fatalf("Error happened in JSON marshal. Err: %s", err)
-		}
-		res.Write(jsonResp)
 	})
 
-	// Handler for when prometheus scrapes data
-	http.Handle("/metrics", promhttp.Handler())
-
-	// Handler for when an instance posts to request setup
-	http.HandleFunc("/setup", func(res http.ResponseWriter, req *http.Request) {
-		body, err := io.ReadAll(req.Body)
-		if err != nil {
-			http.Error(res, err.Error(), http.StatusBadRequest)
-			return
-		}
-
-		var payload ArbitraryJson
-		json.Unmarshal([]byte(body), &payload)
-		ts := time.Now().Unix()
-		collector := Collector{
-			metadata:       make(map[string]string),
-			metrics:        make(map[string]Metric),
-			lastUpdateTime: &ts,
-		}
-
-		// Metadata
-		data := payload["metadata"]
-		if data != nil {
-			metadata := data.(map[string]interface{})
-			for key, value := range metadata {
-				collector.metadata[key] = value.(string)
-			}
-		}
-
-		if id, exists := collector.metadata["id"]; exists {
-			// ID was provided
-			if result, exists := Collectors.Load(id); exists {
-				// Setup has been called a second time for this instance. update the original collector with the new information
-				collector = result.(Collector)
-				if len(collector.metrics) > 0 {
-					prometheus.Unregister(&collector)
-				}
-				log.Printf("Updated logging stats for instance \"%s\"", id)
-			}
-		} else {
-			// ID not provided, generate it
-			id := uuid.New().String()
-			// Check that the generated UUID is not already used. Continually generate one until we get an unused one
-			for _, exists := collector.metadata[id]; exists; _, exists = collector.metadata[id] {
-				id = uuid.New().String()
-			}
-			collector.metadata["id"] = id
-			log.Printf("Started logging stats for instance \"%s\"", id)
-		}
-		id := collector.metadata["id"]
-
-		// Metrics
-		data = payload["metrics"]
-		if data != nil {
-			metrics := data.(map[string]interface{})
-			for key, value := range metrics {
-				if _, exists := collector.metrics[key]; exists {
-					continue
-				}
-				metric := value.(map[string]interface{})
-				valueType, err := GetValueType(metric["type"].(string))
-				if err != nil {
-					http.Error(res, err.Error(), http.StatusBadRequest)
-					return
-				}
-
-				perPlayer := func() []string {
-					if metric["perPlayer"] != nil && metric["perPlayer"].(bool) {
-						return []string{"player"}
-					} else {
-						return nil
-					}
-				}()
-
-				valueMap := collections.NewOrderedMap()
-				collector.metrics[key] = Metric{
-					Description: prometheus.NewDesc(key, metric["description"].(string), perPlayer, collector.metadata),
-					ValueType:   valueType,
-					Value:       valueMap,
-					PerPlayer:   (len(perPlayer) > 0),
-				}
-			}
-		}
-
-		Collectors.Store(id, collector)
-		if len(collector.metrics) > 0 {
-			prometheus.MustRegister(&collector)
-		}
-
-		res.WriteHeader(http.StatusCreated)
-		res.Header().Set("Content-Type", "application/json")
-		resp := make(map[string]string)
-		resp["id"] = id
-		jsonResp, err := json.Marshal(resp)
-		if err != nil {
-			log.Fatalf("Error happened in JSON marshal. Err: %s", err)
-		}
-		res.Write(jsonResp)
-	})
-
-	// Handle for when an instance posts its stats
+	// handler for when an instance posts its stats
 	http.HandleFunc("/stats", func(res http.ResponseWriter, req *http.Request) {
 		body, err := io.ReadAll(req.Body)
 		if err != nil {
@@ -249,51 +115,99 @@ func main() {
 			return
 		}
 
-		var payload ArbitraryJson
+		var payload arbitraryJson
 		json.Unmarshal([]byte(body), &payload)
 
 		id := payload["id"]
 		if id == nil {
-			http.Error(res, "ID not provided in stats payload", http.StatusBadRequest)
-			return
-		}
-		if _, exists := Collectors.Load(id.(string)); !exists {
-			http.Error(res, "Setup hasn't been called from this instance", http.StatusBadRequest)
+			// error out if the instance doesn't provide us with its id
+			http.Error(res, "ID not present in payload", http.StatusBadRequest)
 			return
 		}
 
-		for k, v := range payload {
-			if _, exists := Collectors.Load(id.(string)); !exists || k == "id" {
-				continue
+		if _, exists := collectors.Load(id.(string)); !exists {
+			// this is the first time we're seeing this ID, so configure accordingly
+			ts := time.Now().Unix()
+			collector := collector{
+				metadata:       make(map[string]string),
+				metrics:        make(map[string]metric),
+				lastUpdateTime: &ts,
 			}
-			switch i := v.(type) {
-			case float64:
-				if result, _ := Collectors.Load(id.(string)); !result.(Collector).metrics[k].PerPlayer {
-					result.(Collector).metrics[k].Value.Set("", i)
-				} else {
-					http.Error(res, fmt.Sprintf("A per player metric (%s) was missing the player number", k), http.StatusBadRequest)
-					return
+
+			if data := payload["metadata"]; data != nil {
+				// add the id to this collectors metadata
+				collector.metadata["id"] = id.(string)
+
+				// add user specifed metadata to the collector
+				metadata := data.(map[string]interface{})
+				for key, value := range metadata {
+					collector.metadata[key] = value.(string)
 				}
-			case int:
-				if result, _ := Collectors.Load(id.(string)); !result.(Collector).metrics[k].PerPlayer {
-					result.(Collector).metrics[k].Value.Set("", float64(i))
-				} else {
-					http.Error(res, fmt.Sprintf("A per player metric (%s) was missing the player number", k), http.StatusBadRequest)
-					return
-				}
-			case interface{}:
-				for _, element := range v.([]interface{}) {
-					for key, value := range element.(map[string]interface{}) {
-						result, _ := Collectors.Load(id.(string))
-						result.(Collector).metrics[k].Value.Set(key, value)
+			}
+
+			// add all of the metrics in this payload to our collector
+			if data := payload["metrics"]; data != nil {
+				metrics := data.(map[string]interface{})
+				for key, value := range metrics {
+					if _, exists := collector.metrics[key]; exists {
+						continue
+					}
+
+					metricJson := value.(map[string]interface{})
+					collector.metrics[key] = metric{
+						description: prometheus.NewDesc(key, metricJson["desc"].(string), nil, collector.metadata),
+						value:       metricJson["val"].(float64),
 					}
 				}
 			}
+
+			// store collector in our internal map
+			collectors.Store(id, collector)
+			// register collector with Prometheus
+			prometheus.MustRegister(&collector)
+			log.Printf("Registering collector for instance \"%s\"", id)
+
+			// return OK
+			res.WriteHeader(http.StatusOK)
+			return
 		}
-		collector, _ := Collectors.Load(id.(string))
-		*collector.(Collector).lastUpdateTime = time.Now().Unix()
+
+		// collector already exists, just update metric values
+		data := payload["metrics"]
+		if data == nil {
+			http.Error(res, "Malformed stats json. Ensure your message contains all the required fields", http.StatusBadRequest)
+			return
+		}
+
+		// collector should exist at this point, but check just to be sure
+		currCollector, exists := collectors.Load(id.(string))
+		if !exists {
+			http.Error(res, "Unable to load collector", http.StatusBadRequest)
+			return
+		}
+
+		metricsJson := data.(map[string]interface{})
+		// iterate over all the fields in the "metrics" section
+		for key, value := range metricsJson {
+			metricJson := value.(map[string]interface{})
+
+			if entry, ok := currCollector.(collector).metrics[key]; ok {
+				// update value of copy
+				entry.value = metricJson["val"].(float64)
+				// assign copy to metric
+				currCollector.(collector).metrics[key] = entry
+			}
+		}
+
+		// update lastUpdateTime
+		*currCollector.(collector).lastUpdateTime = time.Now().Unix()
+		// return OK
 		res.WriteHeader(http.StatusOK)
 	})
 
+	// handler for when prometheus scrapes data
+	http.Handle("/metrics", promhttp.Handler())
+
+	// TODO (belchy06): Perhaps this port should be configurable
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }
