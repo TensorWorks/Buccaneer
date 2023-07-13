@@ -25,6 +25,7 @@ public:
     virtual void ShutdownModule() override;
 
     static FBuccaneerCommonModule *GetModule();
+    static void ParseCommandLineOption(const TCHAR *Match, IConsoleVariable *CVar);
 
     void SendStats(TSharedPtr<FJsonObject> JsonObject);
     void SendEvent(TSharedPtr<FJsonObject> JsonObject);
@@ -36,7 +37,6 @@ public:
 
 private:
     void Setup();
-    void ParseCommandLineOption(const TCHAR *Match, IConsoleVariable *CVar);
 
     void SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject);
 

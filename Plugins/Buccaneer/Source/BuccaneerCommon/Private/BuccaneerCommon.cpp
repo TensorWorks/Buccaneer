@@ -40,7 +40,7 @@ void FBuccaneerCommonModule::Setup()
         if (FParse::Value(FCommandLine::Get(), TEXT("BuccaneerIP="), BuccaneerIP) && FParse::Value(FCommandLine::Get(), TEXT("BuccaneerPort="), BuccaneerPort))
         {
             // build the proper url.
-            BuccaneerURL = FString::Printf(TEXT("ws://%s:%d"), *BuccaneerIP, BuccaneerPort);
+            BuccaneerURL = FString::Printf(TEXT("http://%s:%d"), *BuccaneerIP, BuccaneerPort);
         }
     }
 
@@ -52,12 +52,10 @@ void FBuccaneerCommonModule::Setup()
         return;
     }
 
-    if (!FParse::Value(FCommandLine::Get(), TEXT("PixelStreamingID="), InstanceID))
+    if (!FParse::Value(FCommandLine::Get(), TEXT("BuccaneerID="), InstanceID))
     {
-        UE_LOG(BuccaneerCommon, Warning, TEXT("No instance ID provided. Disable Buccaneer stats and events"));
-        CVarBuccaneerEnableEvents->Set(false, ECVF_SetByCommandline);
-        CVarBuccaneerEnableStats->Set(false, ECVF_SetByCommandline);
-        return;
+        // Generate an instance ID if one isn't provided
+        InstanceID = FGuid::NewGuid().ToString();
     }
 
     // Additional Metadata

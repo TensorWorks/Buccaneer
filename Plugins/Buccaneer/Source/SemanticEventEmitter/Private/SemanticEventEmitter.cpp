@@ -4,9 +4,7 @@
 #include "CoreMinimal.h"
 #include "HAL/IConsoleManager.h"
 #include "Logging/LogMacros.h"
-#include "Interfaces/IHttpRequest.h"
-#include "Interfaces/IHttpResponse.h"
-#include "HttpModule.h"
+#include "Dom/JsonObject.h"
 #include "BuccaneerCommon.h"
 
 #define LOCTEXT_NAMESPACE "SemanticEventEmitterModule"
@@ -17,8 +15,7 @@ FSemanticEventEmitterModule *FSemanticEventEmitterModule::SemanticEmitterModule 
 
 void FSemanticEventEmitterModule::StartupModule()
 {
-    JsonObject = MakeShareable(new FJsonObject());
-    bIsReady = true;
+    
 }
 
 void FSemanticEventEmitterModule::ShutdownModule()
@@ -27,20 +24,18 @@ void FSemanticEventEmitterModule::ShutdownModule()
 
 void FSemanticEventEmitterModule::EmitSemanticEvent(FString Level, FString Event)
 {
-    if (!FBuccaneerCommonModule::GetModule()->CVarBuccaneerEnableEvents->GetBool() || !bIsReady)
+    if (!FBuccaneerCommonModule::GetModule()->CVarBuccaneerEnableEvents->GetBool())
     {
         return;
     }
 
-    UE_LOG(SemanticEventEmitter, Log, TEXT("%s: %s"), *Level, *Event);
-    FBuccaneerCommonModule *Module = FBuccaneerCommonModule::GetModule();
-    if (Module && Module->CVarBuccaneerEnableStats->GetBool())
-    {
-        JsonObject->SetField("level", MakeShared<FJsonValueString>((TEXT("%s"), *Level)));
-        JsonObject->SetField("message", MakeShared<FJsonValueString>((TEXT("%s"), *Event)));
+    UE_LOG(SemanticEventEmitter, Verbose, TEXT("%s: %s"), *Level, *Event);
 
-        Module->SendEvent(JsonObject);
-    }
+    TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
+    JsonObject->SetField("level", MakeShared<FJsonValueString>((TEXT("%s"), *Level)));
+    JsonObject->SetField("message", MakeShared<FJsonValueString>((TEXT("%s"), *Event)));
+
+    FBuccaneerCommonModule::GetModule()->SendEvent(JsonObject);
 }
 
 FSemanticEventEmitterModule *FSemanticEventEmitterModule::GetModule()

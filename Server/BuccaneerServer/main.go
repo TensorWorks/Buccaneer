@@ -35,7 +35,12 @@ type metric struct {
 	// long, human-readable, description
 	description *prometheus.Desc
 	//
+	records map[string]record
+}
+
+type record struct {
 	value float64
+	time  int64
 }
 
 type arbitraryJson map[string]interface{}
@@ -48,7 +53,16 @@ func (collector *collector) Describe(ch chan<- *prometheus.Desc) {
 
 func (collector *collector) Collect(ch chan<- prometheus.Metric) {
 	for _, metric := range collector.metrics {
-		ch <- prometheus.MustNewConstMetric(metric.description, prometheus.GaugeValue, metric.value)
+
+		if record, ok := metric.records[""]; ok {
+			// if we can get a value from no key, this indicates a system metric and isn't per player
+			ch <- prometheus.MustNewConstMetric(metric.description, prometheus.GaugeValue, record.value)
+		} else {
+			// otherwise we must loop through all the player ids
+			for key, record := range metric.records {
+				ch <- prometheus.MustNewConstMetric(metric.description, prometheus.GaugeValue, record.value, key)
+			}
+		}
 	}
 }
 
@@ -64,6 +78,17 @@ func removeStaleCollectors() {
 				prometheus.Unregister(&collector)
 				collectors.Delete(key)
 			}
+
+			prometheus.Unregister(&collector)
+			for _, metric := range collector.metrics {
+				for id, record := range metric.records {
+					if time.Now().Unix()-record.time > 10 {
+						log.Printf("Deregistering records for player \"%s\"", id)
+						delete(metric.records, id)
+					}
+				}
+			}
+			prometheus.Register(&collector)
 			return true
 		})
 
@@ -77,11 +102,10 @@ func main() {
 	go removeStaleCollectors()
 
 	// either open or create the events log file scraped by promtail
-	fs, err := os.OpenFile("event.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	fs, err := os.OpenFile("./event.log", os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
-		panic(err)
+		log.Fatal(err.Error())
 	}
-
 	defer fs.Close()
 
 	// handler for when an instance posts an event
@@ -96,13 +120,13 @@ func main() {
 		json.Unmarshal([]byte(body), &payload)
 
 		// check the event json contains a level, message and id
-		if payload["Level"] == nil || payload["Message"] == nil || payload["ID"] == nil {
+		if payload["level"] == nil || payload["message"] == nil || payload["id"] == nil {
 			http.Error(res, "Malformed event json. Ensure your message contains all the required fields", http.StatusBadRequest)
 			return
 		}
 
 		var ts = time.Now().Format(time.RFC3339Nano)
-		_, _ = fs.WriteString("{" + "\"log\":\"level=" + payload["Level"].(string) + " ts=" + ts + " msg=\\\"" + payload["Message"].(string) + "\\\"\", \"stream\":\"" + payload["Level"].(string) + "\", \"time\":\"" + ts + "\", \"instance\":\"" + payload["ID"].(string) + "\"}\n")
+		_, _ = fs.WriteString("{" + "\"log\":\"level=" + payload["level"].(string) + " ts=" + ts + " msg=\\\"" + payload["message"].(string) + "\\\"\", \"stream\":\"" + payload["level"].(string) + "\", \"time\":\"" + ts + "\", \"instance\":\"" + payload["id"].(string) + "\"}\n")
 
 		res.WriteHeader(http.StatusOK)
 	})
@@ -154,9 +178,34 @@ func main() {
 					}
 
 					metricJson := value.(map[string]interface{})
-					collector.metrics[key] = metric{
-						description: prometheus.NewDesc(key, metricJson["description"].(string), nil, collector.metadata),
-						value:       metricJson["value"].(float64),
+
+					if valueArray, ok := metricJson["value"].([]interface{}); ok {
+						// if the value object is an array, then loop through this array
+						recordMap := make(map[string]record)
+						// if the value object is an array, then loop through this array
+						for _, val := range valueArray {
+							for k, v := range val.(map[string]interface{}) {
+								recordMap[k] = record{
+									value: v.(float64),
+									time:  ts,
+								}
+							}
+						}
+
+						collector.metrics[key] = metric{
+							description: prometheus.NewDesc(key, metricJson["description"].(string), []string{"player"}, collector.metadata),
+							records:     recordMap,
+						}
+					} else {
+						recordMap := make(map[string]record)
+						recordMap[""] = record{
+							value: metricJson["value"].(float64),
+							time:  ts,
+						}
+						collector.metrics[key] = metric{
+							description: prometheus.NewDesc(key, metricJson["description"].(string), nil, collector.metadata),
+							records:     recordMap,
+						}
 					}
 				}
 			}
@@ -164,7 +213,7 @@ func main() {
 			// store collector in our internal map
 			collectors.Store(id, collector)
 			// register collector with Prometheus
-			prometheus.MustRegister(&collector)
+			prometheus.Register(&collector)
 			log.Printf("Registering collector for instance \"%s\"", id)
 
 			// return OK
@@ -193,9 +242,61 @@ func main() {
 
 			if entry, ok := currCollector.(collector).metrics[key]; ok {
 				// update value of copy
-				entry.value = metricJson["value"].(float64)
+				if valueArray, ok := metricJson["value"].([]interface{}); ok {
+					// if the value object is an array, then loop through this array
+					for _, val := range valueArray {
+						for k, v := range val.(map[string]interface{}) {
+							entry.records[k] = record{
+								value: v.(float64),
+								time:  time.Now().Unix(),
+							}
+						}
+					}
+				} else {
+					entry.records[""] = record{
+						value: metricJson["value"].(float64),
+						time:  time.Now().Unix(),
+					}
+				}
+
 				// assign copy to metric
 				currCollector.(collector).metrics[key] = entry
+			} else {
+				// Unregister the collector from prometheus so we can modify it
+				temp := currCollector.(collector)
+				prometheus.Unregister(&temp)
+
+				if valueArray, ok := metricJson["value"].([]interface{}); ok {
+					// if the value object is an array, then loop through this array
+					recordMap := make(map[string]record)
+					for _, val := range valueArray {
+						for k, v := range val.(map[string]interface{}) {
+							recordMap[k] = record{
+								value: v.(float64),
+								time:  time.Now().Unix(),
+							}
+						}
+					}
+
+					temp.metrics[key] = metric{
+						description: prometheus.NewDesc(key, metricJson["description"].(string), []string{"player"}, temp.metadata),
+						records:     recordMap,
+					}
+				} else {
+					recordMap := make(map[string]record)
+					recordMap[""] = record{
+						value: metricJson["value"].(float64),
+						time:  time.Now().Unix(),
+					}
+					temp.metrics[key] = metric{
+						description: prometheus.NewDesc(key, metricJson["description"].(string), nil, temp.metadata),
+						records:     recordMap,
+					}
+				}
+
+				collectors.Store(id, currCollector)
+				// register collector with Prometheus
+				prometheus.Register(&temp)
 			}
 		}
 
@@ -208,6 +309,5 @@ func main() {
 	// handler for when prometheus scrapes data
 	http.Handle("/metrics", promhttp.Handler())
 
-	// TODO (belchy06): Perhaps this port should be configurable
 	log.Fatal(http.ListenAndServe(":8000", nil))
 }

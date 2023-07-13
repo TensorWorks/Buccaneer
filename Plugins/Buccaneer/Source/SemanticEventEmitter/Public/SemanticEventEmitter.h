@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
-#include "Dom/JsonObject.h"
+
 
 DECLARE_LOG_CATEGORY_EXTERN(SemanticEventEmitter, Log, All);
 
@@ -18,7 +18,5 @@ public:
     static FSemanticEventEmitterModule *GetModule();
 
 private:
-    bool bIsReady = false;
-    TSharedPtr<FJsonObject> JsonObject;
     static FSemanticEventEmitterModule *SemanticEmitterModule;
 };

@@ -17,11 +17,6 @@ DEFINE_LOG_CATEGORY(TimeSeriesDataEmitter);
 
 void FTimeSeriesDataEmitterModule::StartupModule()
 {
-    if (!FBuccaneerCommonModule::GetModule()->CVarBuccaneerEnableStats->GetBool())
-    {
-        return;
-    }
-
     MetricJson = MakeShareable(new FJsonObject());
     JsonObject = MakeShareable(new FJsonObject());
     JsonObject->SetField(TEXT("metrics"), MakeShared<FJsonValueObject>(MetricJson));
