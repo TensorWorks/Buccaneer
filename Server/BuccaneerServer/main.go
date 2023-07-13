@@ -80,10 +80,10 @@ func removeStaleCollectors() {
 			}
 
 			prometheus.Unregister(&collector)
-			for _, metric := range collector.metrics {
+			for name, metric := range collector.metrics {
 				for id, record := range metric.records {
 					if time.Now().Unix()-record.time > 10 {
-						log.Printf("Deregistering records for player \"%s\"", id)
+						log.Printf("Deregistering \"%s\" records for player \"%s\"", name, id)
 						delete(metric.records, id)
 					}
 				}
