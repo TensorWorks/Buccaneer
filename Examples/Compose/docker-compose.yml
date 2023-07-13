@@ -1,6 +1,7 @@
 services:
   unreal:
     image: "tensorworks/buccaneerdemo-application"
+    command: [ "-PixelStreamingURL=ws://127.0.0.1:8888", "-BuccaneerURL=http://127.0.0.1:8000" ]
     container_name: unreal
     network_mode: "host"
     deploy:
@@ -16,17 +17,10 @@ services:
     container_name: cirrus
     network_mode: "host"
 
-  statsserver:
-    image: "tensorworks/buccaneerdemo-statsserver"
-    container_name: stats
+  buccaneerserver:
+    image: "tensorworks/buccaneerdemo-buccaneerserver"
+    container_name: buccaneerserver
     network_mode: "host"
-
-  eventsserver:
-    image: "tensorworks/buccaneerdemo-eventsserver"
-    container_name: events
-    network_mode: "host"
-    volumes:
-    - "eventslogs:/app"
 
   prometheus:
     image: "prom/prometheus"
