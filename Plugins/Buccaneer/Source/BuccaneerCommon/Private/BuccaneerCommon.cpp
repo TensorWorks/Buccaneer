@@ -52,10 +52,15 @@ void FBuccaneerCommonModule::Setup()
         return;
     }
 
+    // Try and parse an instance ID
     if (!FParse::Value(FCommandLine::Get(), TEXT("BuccaneerID="), InstanceID))
-    {
-        // Generate an instance ID if one isn't provided
-        InstanceID = FGuid::NewGuid().ToString();
+    {   
+        // Try and parse a pixel streaming ID for users who don't want to pollute their command line by specifying two IDs
+        if (!FParse::Value(FCommandLine::Get(), TEXT("PixelStreamingID="), InstanceID))
+        {
+            // Generate an instance ID if one isn't provided
+            InstanceID = FGuid::NewGuid().ToString();
+        }
     }
 
     // Additional Metadata

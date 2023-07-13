@@ -15,7 +15,8 @@ import (
 
 var (
 	// global map to store our collectors
-	collectors sync.Map
+	collectors      sync.Map
+	collectorsMutex = sync.RWMutex{}
 )
 
 type collector struct {
@@ -69,6 +70,7 @@ func (collector *collector) Collect(ch chan<- prometheus.Metric) {
 func removeStaleCollectors() {
 	// sub-routine to remove stale collectors
 	for {
+		collectorsMutex.Lock()
 		collectors.Range(func(key, currCollector interface{}) bool {
 			collector := currCollector.(collector)
 			// TODO (belchy06): Perhaps this time should be configurable
@@ -91,7 +93,7 @@ func removeStaleCollectors() {
 			prometheus.Register(&collector)
 			return true
 		})
-
+		collectorsMutex.Unlock()
 		// sleep before running again
 		time.Sleep(5 * time.Second)
 	}
@@ -235,6 +237,7 @@ func main() {
 			return
 		}
 
+		collectorsMutex.Lock()
 		metricsJson := data.(map[string]interface{})
 		// iterate over all the fields in the "metrics" section
 		for key, value := range metricsJson {
@@ -302,6 +305,7 @@ func main() {
 
 		// update lastUpdateTime
 		*currCollector.(collector).lastUpdateTime = time.Now().Unix()
+		collectorsMutex.Lock()
 		// return OK
 		res.WriteHeader(http.StatusOK)
 	})
