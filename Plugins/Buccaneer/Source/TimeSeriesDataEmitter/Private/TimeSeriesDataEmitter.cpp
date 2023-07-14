@@ -104,6 +104,7 @@ void FTimeSeriesDataEmitterModule::ComputeUsedMemory()
     UsedVirtualMemory = static_cast<double>(MemoryStats.UsedVirtual) / BitsPerMB;
     UsedPhysicalMemory = static_cast<double>(MemoryStats.UsedPhysical) / BitsPerMB;
 
+#if !UE_BUILD_SHIPPING
     TArray<FStatMessage> Stats;
     GetPermanentStats(Stats);
 
@@ -119,6 +120,7 @@ void FTimeSeriesDataEmitterModule::ComputeUsedMemory()
         }
     }
     UsedGPUMemory = (double)(TotalMemory / 1024.f / 1024.f);
+#endif    
     // UE_LOG(TimeSeriesDataEmitter, VeryVerbose, TEXT("Used GPU Memory: %.3fMB"), UsedGPUMemory);
 }
 
