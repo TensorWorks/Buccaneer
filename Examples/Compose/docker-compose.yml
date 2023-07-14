@@ -1,7 +1,7 @@
 services:
   unreal:
     image: "tensorworks/buccaneerdemo-application"
-    command: [ "-PixelStreamingURL=ws://127.0.0.1:8888", "-BuccaneerURL=http://127.0.0.1:8000" ]
+    command: [ "-PixelStreamingURL=ws://127.0.0.1:8888", "-BuccaneerURL=http://127.0.0.1:8000", "-RenderOffScreen", "-Res=1920x1080" ]
     container_name: unreal
     network_mode: "host"
     deploy:
