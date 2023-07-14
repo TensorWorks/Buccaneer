@@ -24,7 +24,7 @@ The Buccaneer plugin consists of two primary components:
 
 - **Time-Series Data Emitter**
     
-    The time-series data emitter which collects real-time performance data and exports it for consumption by Prometheus where the per-instance data can then be aggregated in order to examine the performance of an entire multi-instance simulation.
+    The time-series data emitter collects real-time performance data and exports it for consumption by Prometheus where the per-instance data can then be aggregated in order to examine the performance of an entire multi-instance simulation.
 
 - **Semantic Event Emitter**
     
