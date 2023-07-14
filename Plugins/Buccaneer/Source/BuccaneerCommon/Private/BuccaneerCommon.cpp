@@ -71,10 +71,20 @@ void FBuccaneerCommonModule::Setup()
         UE_LOG(BuccaneerCommon, Warning, TEXT("%s"), *CmdLineMetadata);
         TArray<FString> ParsedMetadata;
         CmdLineMetadata.ParseIntoArray(ParsedMetadata, TEXT(";"), false);
-        for (auto Element : ParsedMetadata)
+        for (FString Element : ParsedMetadata)
         {
+            if(Element.IsEmpty())
+            {
+                continue;
+            }
+
             FString Key, Value;
             Element.Split(TEXT(":"), &Key, &Value);
+            if(Key.IsEmpty() || Value.IsEmpty())
+            {
+                continue;
+            }
+            
             MetadataJson->SetField(*Key, MakeShared<FJsonValueString>((TEXT("%s"), *Value)));
         }
     }

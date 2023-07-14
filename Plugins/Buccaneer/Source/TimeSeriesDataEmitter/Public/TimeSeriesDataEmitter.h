@@ -26,7 +26,7 @@ public:
 private:
     void PushStatsHTTP();
     void ComputeUsedMemory();
-    void UpdateMetric(FString Name, FString Description, double Value);
+    void UpdateMetric(FString Name, double Value);
 
     // Time keeping variables
     double LastTickTime = 0.0;
@@ -51,5 +51,5 @@ private:
     TSharedPtr<FJsonObject> JsonObject;
     TSharedPtr<FJsonObject> MetricJson;
 
-    bool bIsReady = false;
+    TMap<FString, FString> StatDescriptionMap;
 };
