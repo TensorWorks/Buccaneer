@@ -1,6 +1,5 @@
 #pragma once
 
-
 #include "CoreMinimal.h"
 #include "Modules/ModuleManager.h"
 #include "Interfaces/IHttpRequest.h"
@@ -21,36 +20,29 @@ DECLARE_LOG_CATEGORY_EXTERN(BuccaneerCommon, Log, All);
 class BUCCANEERCOMMON_API FBuccaneerCommonModule : public IModuleInterface
 {
 public:
-	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
+    /** IModuleInterface implementation */
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 
-	static FBuccaneerCommonModule* GetModule();
+    static FBuccaneerCommonModule *GetModule();
+    static void ParseCommandLineOption(const TCHAR *Match, IConsoleVariable *CVar);
 
-    void SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject);
-	void SendHTTPWithResponse(FString URL, TSharedPtr<FJsonObject> JsonObject);
-	void ParseCommandLineOption(const TCHAR* Match, IConsoleVariable* CVar);
+    void SendStats(TSharedPtr<FJsonObject> JsonObject);
+    void SendEvent(TSharedPtr<FJsonObject> JsonObject);
 
-	FOnSetupComplete SetupComplete;
-	
-	FString ID;
-	FString StatsEmitterURL;
-	FString EventEmitterURL;
+    FOnSetupComplete SetupComplete;
 
-	bool bSetupCalled = false;
-	
-	TSharedPtr<FJsonObject> MetadataJson;
-
-	IConsoleVariable* CVarBuccaneerEnableStats;
-	IConsoleVariable* CVarBuccaneerEnableEvents;
+    IConsoleVariable *CVarBuccaneerEnableStats;
+    IConsoleVariable *CVarBuccaneerEnableEvents;
 
 private:
+    void Setup();
 
-	void Setup();	
-	void RegisterMetadata(FString Key, FString Value);
-	void HandleResponse(FString ResponseString);
+    void SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject);
 
-	static FBuccaneerCommonModule* BuccaneerCommonModule;	
+    FString BuccaneerURL;
+    FString InstanceID;
+    TSharedPtr<FJsonObject> MetadataJson;
+
+    static FBuccaneerCommonModule *BuccaneerCommonModule;
 };
-
-

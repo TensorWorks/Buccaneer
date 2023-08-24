@@ -22,22 +22,16 @@ public:
 	virtual void ShutdownModule() override;
 	void Setup();
 	UFUNCTION()
-	void HandlePlayerDisconnect(FPixelStreamingPlayerId PlayerId, bool WasQualityController);
 	void ConsumeStat(FPixelStreamingPlayerId PlayerId, FName StatName, float StatValue);
 
 	IConsoleVariable* CVarBuccaneer4PixelStreamingEnableStats;
 	
 private:
-	void OnStreamerReady(IPixelStreamingModule& Module);
-	void RegisterMetadata(FString Key, FString Value);
-	void RegisterMetric(FString Name, FString Description, FString Type);
 
 	double LoggingStart;
 	double ReportingInterval;
 
-	FBuccaneerCommonModule* BuccaneerCommonModule;
+    TMap<FString, FString> StatDescriptionMap;
 
-	TSharedPtr<FJsonObject> JsonObject; 
-	TSharedPtr<FJsonObject> SetupJson; 
-    TSharedPtr<FJsonObject> MetricJson;
+    TSharedPtr<FJsonObject> JsonObject;
 };

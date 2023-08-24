@@ -16,6 +16,47 @@ namespace Buccaneer4PixelStreaming
 
 void FBuccaneer4PixelStreamingModule::StartupModule()
 {
+    StatDescriptionMap = {
+        {"jitterBufferDelay", "jitterBufferDelay"},
+        {"framesSent", "framesSent"},
+	    {"framesPerSecond", "framesPerSecond"},
+	    {"framesReceived", "framesReceived"},
+	    {"framesDropped", "framesDropped"},
+	    {"framesDecoded", "framesDecoded"},
+	    {"framesCorrupted", "framesCorrupted"},
+	    {"partialFramesLost", "partialFramesLost"},
+	    {"fullFramesLost", "fullFramesLost"},
+	    {"hugeFramesSent", "hugeFramesSent"},
+	    {"jitterBufferTargetDelay", "jitterBufferTargetDelay"},
+	    {"interruptionCount", "interruptionCount"},
+	    {"totalInterruptionDuration", "totalInterruptionDuration"},
+	    {"freezeCount", "freezeCount"},
+	    {"pauseCount", "pauseCount"},
+	    {"totalFreezesDuration", "totalFreezesDuration"},
+	    {"totalPausesDuration", "totalPausesDuration"},
+	    {"firCount", "firCount"},
+	    {"pliCount", "pliCount"},
+	    {"nackCount", "nackCount"},
+	    {"sliCount", "sliCount"},
+	    {"retransmittedBytesSent", "retransmittedBytesSent"},
+	    {"totalEncodedBytesTarget", "totalEncodedBytesTarget"},
+	    {"keyFramesEncoded", "keyFramesEncoded"},
+	    {"frameWidth", "frameWidth"},
+	    {"frameHeight", "frameHeight"},
+	    {"bytesSent", "bytesSent"},
+	    {"qpSum", "qpSum"},
+	    {"totalEncodeTime", "totalEncodeTime"},
+	    {"totalPacketSendDelay", "totalPacketSendDelay"},
+        {"packetSendDelay", "packetSendDelay"},
+	    {"framesEncoded", "framesEncoded"},
+	    {"transmitFps", "transmit fps"},
+	    {"bitrate", "bitrate (kb/s)"},
+	    {"qp", "qp"},
+	    {"encodeTime", "encode time (ms)"},
+	    {"encodeFps", "encode fps"},
+	    {"captureToSend", "capture to send (ms)"},
+	    {"captureFps", "capture fps"}
+    };
 
 	CVarBuccaneer4PixelStreamingEnableStats = IConsoleManager::Get().RegisterConsoleVariable(
 		TEXT("Buccaneer4PixelStreaming.EnableStats"),
@@ -23,92 +64,20 @@ void FBuccaneer4PixelStreamingModule::StartupModule()
 		TEXT("Disables the collection and logging of Pixel Streaming stats with Buccaneer"),
 		ECVF_Default);
 
-	BuccaneerCommonModule = FBuccaneerCommonModule::GetModule();
-	BuccaneerCommonModule->ParseCommandLineOption(TEXT("Buccaneer4PixelStreamingEnableStats"), CVarBuccaneer4PixelStreamingEnableStats);
-	if(!CVarBuccaneer4PixelStreamingEnableStats->GetBool())
-	{
-		return;
-	}
-	
-	if(BuccaneerCommonModule->StatsEmitterURL == "")
-	{
-		// No URL. No point in continuing
-		UE_LOG(BuccaneerPixelStreaming, Log, TEXT("Buccaneer Pixel Streaming logging is disabled, provide `StatsEmitterURL` cmd-args to enable it"));
-		return;
-	}
-
-	// Add a callback to setup this module when Buccaneer Common has finished setting up
-	BuccaneerCommonModule->SetupComplete.AddRaw(this, &FBuccaneer4PixelStreamingModule::Setup);
-}
-
-void FBuccaneer4PixelStreamingModule::HandlePlayerDisconnect(FPixelStreamingPlayerId PlayerId, bool WasQualityController)
-{
-	UE_LOG(BuccaneerPixelStreaming, Log, TEXT("Player disconnected: %s"), *PlayerId);
-	TSharedPtr<FJsonObject> TempJson = MakeShareable(new FJsonObject());
-	TempJson->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerCommonModule->ID)));
-	TempJson->SetField("playerId", MakeShared<FJsonValueString>((TEXT("%s"), *PlayerId)));
-	BuccaneerCommonModule->SendHTTP((BuccaneerCommonModule->StatsEmitterURL + FString("/deletePlayer")), TempJson);
-
-	JsonObject = MakeShareable(new FJsonObject());
+    Setup();
 }
 
 void FBuccaneer4PixelStreamingModule::Setup()
 {
-	UE_LOG(BuccaneerPixelStreaming, Log, TEXT("FBuccaneer4PixelStreamingModule::Setup()"));
-	JsonObject = MakeShareable(new FJsonObject());
-	SetupJson = MakeShareable(new FJsonObject());
-    MetricJson = MakeShareable(new FJsonObject());
-
-	RegisterMetric("jitterBufferDelay", "jitterBufferDelay", "gauge");
-	RegisterMetric("framesSent", "framesSent", "gauge");
-	RegisterMetric("framesPerSecond", "framesPerSecond", "gauge");
-	RegisterMetric("framesReceived", "framesReceived", "gauge");
-	RegisterMetric("framesDropped", "framesDropped", "gauge");
-	RegisterMetric("framesDecoded", "framesDecoded", "gauge");
-	RegisterMetric("framesCorrupted", "framesCorrupted", "gauge");
-	RegisterMetric("partialFramesLost", "partialFramesLost", "gauge");
-	RegisterMetric("fullFramesLost", "fullFramesLost", "gauge");
-	RegisterMetric("hugeFramesSent", "hugeFramesSent", "gauge");
-	RegisterMetric("jitterBufferTargetDelay", "jitterBufferTargetDelay", "gauge");
-	RegisterMetric("interruptionCount", "interruptionCount", "gauge");
-	RegisterMetric("totalInterruptionDuration", "totalInterruptionDuration", "gauge");
-	RegisterMetric("freezeCount", "freezeCount", "gauge");
-	RegisterMetric("pauseCount", "pauseCount", "gauge");
-	RegisterMetric("totalFreezesDuration", "totalFreezesDuration", "gauge");
-	RegisterMetric("totalPausesDuration", "totalPausesDuration", "gauge");
-	RegisterMetric("firCount", "firCount", "gauge");
-	RegisterMetric("pliCount", "pliCount", "gauge");
-	RegisterMetric("nackCount", "nackCount", "gauge");
-	RegisterMetric("sliCount", "sliCount", "gauge");
-	RegisterMetric("retransmittedBytesSent", "retransmittedBytesSent", "gauge");
-	RegisterMetric("totalEncodedBytesTarget", "totalEncodedBytesTarget", "gauge");
-	RegisterMetric("keyFramesEncoded", "keyFramesEncoded", "gauge");
-	RegisterMetric("frameWidth", "frameWidth", "gauge");
-	RegisterMetric("frameHeight", "frameHeight", "gauge");
-	RegisterMetric("bytesSent", "bytesSent", "gauge");
-	RegisterMetric("qpSum", "qpSum", "gauge");
-	RegisterMetric("totalEncodeTime", "totalEncodeTime", "gauge");
-	RegisterMetric("totalPacketSendDelay", "totalPacketSendDelay", "gauge");
-	RegisterMetric("framesEncoded", "framesEncoded", "gauge");
-	RegisterMetric("transmitFps", "transmit fps", "gauge");
-	RegisterMetric("bitrate", "bitrate (kb/s)", "gauge");
-	RegisterMetric("qp", "qp", "gauge");
-	RegisterMetric("encodeTime", "encode time (ms)", "gauge");
-	RegisterMetric("encodeFps", "encode fps", "gauge");
-	RegisterMetric("captureToSend", "capture to send (ms)", "gauge");
-	RegisterMetric("captureFps", "capture fps", "gauge");
-
-
-	SetupJson->SetField("metadata", MakeShared<FJsonValueObject>(BuccaneerCommonModule->MetadataJson));
-    SetupJson->SetField("metrics", MakeShared<FJsonValueObject>(MetricJson));
-	BuccaneerCommonModule->SendHTTP((BuccaneerCommonModule->StatsEmitterURL + FString("/setup")), SetupJson);
+    FBuccaneerCommonModule::ParseCommandLineOption(TEXT("Buccaneer4PixelStreamingEnableStats"), CVarBuccaneer4PixelStreamingEnableStats);
 
 	LoggingStart = FPlatformTime::Seconds();
 	ReportingInterval = 1;
 
+    JsonObject =  MakeShareable(new FJsonObject());
+
 	if (UPixelStreamingDelegates* Delegates = UPixelStreamingDelegates::GetPixelStreamingDelegates())
 	{
-		Delegates->OnClosedConnectionNative.AddRaw(this, &FBuccaneer4PixelStreamingModule::HandlePlayerDisconnect);
 		Delegates->OnStatChangedNative.AddRaw(this, &FBuccaneer4PixelStreamingModule::ConsumeStat);
 	}
 }
@@ -119,70 +88,81 @@ void FBuccaneer4PixelStreamingModule::ShutdownModule()
 	// we call this function before unloading the module.
 }
 
-void FBuccaneer4PixelStreamingModule::RegisterMetric(FString Name, FString Description, FString Type) 
-{
-    TSharedPtr<FJsonObject> MetricInfoJson = MakeShareable(new FJsonObject());
-    MetricInfoJson->SetField("description", MakeShared<FJsonValueString>((TEXT("%s"), *Description)));
-    MetricInfoJson->SetField("type", MakeShared<FJsonValueString>((TEXT("%s"), *Type)));
-	MetricInfoJson->SetField("perPlayer", MakeShared<FJsonValueBoolean>(true));
-    MetricJson->SetField(*Name, MakeShared<FJsonValueObject>(MetricInfoJson));
-}
-
 void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId PlayerId, FName StatName, float StatValue)
 {
-	double NowTime = FPlatformTime::Seconds();
-
-	bool bHasField = JsonObject->HasField((TEXT("%s"), *StatName.ToString()));
-	if(bHasField)
+    if(!CVarBuccaneer4PixelStreamingEnableStats->GetBool() || PlayerId == TEXT("Application"))
 	{
-		TArray<TSharedPtr<FJsonValue>> ValueArray = JsonObject->GetArrayField((TEXT("%s"), *StatName.ToString()));
-		bool bRequiresCreation = true;
-		for (int i = 0; i < ValueArray.Num(); i++) 
-		{
-			const TSharedPtr<FJsonObject> temp = ValueArray[i]->AsObject();
+		return;
+	}
+    /**
+    * "{StatName}": {
+    *      "description": "{StatDescription}",
+    *      "value": [
+    *          "{PlayerId}": {StatValue}
+    *      ]
+    * }
+    */
+
+    const TSharedPtr<FJsonObject>* MetricJson = nullptr;
+	if(JsonObject->TryGetObjectField((TEXT("%s"), *StatName.ToString()), MetricJson))
+	{
+		TArray<TSharedPtr<FJsonValue>> ValueArray = (*MetricJson)->GetArrayField(TEXT("value"));
+
+        bool bRequiresCreation = true;
+        for (int i = 0; i < ValueArray.Num(); i++) 
+        {
+            const TSharedPtr<FJsonObject> ValueJson = ValueArray[i]->AsObject();
 			double val;
-			bool bSuccess = temp->TryGetNumberField(*PlayerId, val);
-			if(bSuccess)
+			if(ValueJson->TryGetNumberField(*PlayerId, val))
 			{
 				// This metric already has this player id, update the value accordingly
-				temp->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
+				ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
 				bRequiresCreation = false;
 				break;
 			}
-       	}
+        }
+	
 		if(bRequiresCreation)
 		{
-			// Metric doesn't have this player id. Append it to the ValueArray
-			TSharedPtr<FJsonObject> MetricInfoJson = MakeShareable(new FJsonObject());
-			MetricInfoJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
+			TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
+            ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
 
-			TSharedRef< FJsonValueObject > JsonValue = MakeShareable( new FJsonValueObject( MetricInfoJson) );
-			ValueArray.Add(JsonValue);
-			JsonObject->SetArrayField((TEXT("%s"), *StatName.ToString()), ValueArray);
+            ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
+
+            (*MetricJson)->SetArrayField((TEXT("value")), ValueArray);
 		}
 	}
 	else
 	{
-		TArray<TSharedPtr<FJsonValue>> ValueArray;
-		TSharedPtr<FJsonObject> MetricInfoJson = MakeShareable(new FJsonObject());
-		MetricInfoJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
+        if(!StatDescriptionMap.Contains(*StatName.ToString()))
+        {
+            UE_LOG(BuccaneerPixelStreaming, Log, TEXT("%s"), *StatName.ToString());
+            return;
+        }
+        TSharedPtr<FJsonObject> NewMetricJson = MakeShareable(new FJsonObject());
+        NewMetricJson->SetField("description", MakeShared<FJsonValueString>((TEXT("%s"), *StatDescriptionMap[*StatName.ToString()])));
 
-		TSharedRef< FJsonValueObject > JsonValue = MakeShareable( new FJsonValueObject( MetricInfoJson) );
-		ValueArray.Add(JsonValue);
-		JsonObject->SetArrayField((TEXT("%s"), *StatName.ToString()), ValueArray);
+		
+        TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
+        ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
+
+        TArray<TSharedPtr<FJsonValue>> ValueArray;
+        ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
+		
+        NewMetricJson->SetArrayField((TEXT("value")), ValueArray);
+
+		JsonObject->SetObjectField((TEXT("%s"), *StatName.ToString()), NewMetricJson);
 	}
 
+    double NowTime = FPlatformTime::Seconds();
 	if ( (NowTime - LoggingStart) >= ReportingInterval )
 	{
 		LoggingStart = NowTime;
-		if(BuccaneerCommonModule->ID == "")
-		{
-			return;
-		}
-   		JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerCommonModule->ID)));
+        TSharedPtr<FJsonObject> PayloadJson =  MakeShareable(new FJsonObject());
+        PayloadJson->SetObjectField(TEXT("metrics"), JsonObject);
+		FBuccaneerCommonModule::GetModule()->SendStats(PayloadJson);
 
-		BuccaneerCommonModule->SendHTTP((BuccaneerCommonModule->StatsEmitterURL + FString("/stats")), JsonObject);
- 		JsonObject = MakeShareable(new FJsonObject());
+        JsonObject =  MakeShareable(new FJsonObject());
 	}
 }
 

@@ -13,27 +13,24 @@ DECLARE_LOG_CATEGORY_EXTERN(TimeSeriesDataEmitter, Log, All);
 class TIMESERIESDATAEMITTER_API FTimeSeriesDataEmitterModule : public IModuleInterface, public FTickableGameObject
 {
 public:
+    /** IModuleInterface implementation */
+    virtual void StartupModule() override;
+    virtual void ShutdownModule() override;
 
-	/** IModuleInterface implementation */
-	virtual void StartupModule() override;
-	virtual void ShutdownModule() override;
-
-    void Setup();
-	// FTickableGameObject
-	bool IsTickableWhenPaused() const override;
-	bool IsTickableInEditor() const override;
-	void Tick(float DeltaTime) override;
-	TStatId GetStatId() const override;
+    // FTickableGameObject
+    bool IsTickableWhenPaused() const override;
+    bool IsTickableInEditor() const override;
+    void Tick(float DeltaTime) override;
+    TStatId GetStatId() const override;
 
 private:
     void PushStatsHTTP();
     void ComputeUsedMemory();
-    void RegisterMetric(FString Name, FString Description, FString Type);
-    void RegisterMetadata(FString Key, FString Value);
+    void UpdateMetric(FString Name, double Value);
 
     // Time keeping variables
     double LastTickTime = 0.0;
-	double InterimStart = 0.0;
+    double InterimStart = 0.0;
     double InterimDuration = 1.0;
     // Rolling average of times recorded during the defined period
     double InterimMeanFrameTime = 0.0;
@@ -47,14 +44,12 @@ private:
     double UsedGPUMemory = 0.0;
     // Metrics to store information about the number of hangs and number of frames recorded during the interim
     // (using an unsigned int as there shouldn't be more than 4.2 million hangs during a time period, and if there is you have bigger problems)
-    uint32 InterimHangCount = 0;
-    uint32 InterimFrameCount = 1; 
+    double InterimHangCount = 0.0;
+    uint32 InterimFrameCount = 1;
 
     // Variable for storing logging URL and logging object
     TSharedPtr<FJsonObject> JsonObject;
-    TSharedPtr<FJsonObject> MetricJson;   
-    
-    bool bIsReady = false;
-    
-    FBuccaneerCommonModule* BuccaneerCommonModule;
+    TSharedPtr<FJsonObject> MetricJson;
+
+    TMap<FString, FString> StatDescriptionMap;
 };
