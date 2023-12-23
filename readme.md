@@ -4,9 +4,9 @@
     <img src="Images/Dashboard.png">
 </p>
 
-Buccaneer is a solution for the Unreal Engine that logs a variety of performance metrics and semantic events by pushing the collected data to an accompanying part of Go servers. From here, the [Prometheus](https://prometheus.io/) software scrapes the endpoints exposed by the Go server, storing the scraped metrics as it goes. Through the use of a [Grafana](https://grafana.com/) dashboard, the scraped metrics can be seen in an easily interprable manner, with the semantic events being overlayed as annotations.
+Buccaneer is a solution for the Unreal Engine that logs a variety of performance metrics and semantic events by pushing the collected data to an accompanying part of Go servers. From here, the [Prometheus](https://prometheus.io/) software scrapes the endpoints exposed by the Go server, storing the scraped metrics as it goes. Through the use of a [Grafana](https://grafana.com/) dashboard, the scraped metrics can be seen in an easily interpretable manner, with the semantic events being overlayed as annotations.
 
-NOTE: The Buccaneer4PixelStreaming plugin only works in Unreal Engine 5 and is dependant on both the Buccaneer base plugin and the [Pixel Streaming](https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/PixelStreaming/) plugin.
+NOTE: The Buccaneer4PixelStreaming plugin only works in Unreal Engine 5 and is dependent on both the Buccaneer base plugin and the [Pixel Streaming](https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/PixelStreaming/) plugin.
 <br/></br>
 
 
@@ -116,7 +116,7 @@ The following CVars can be used to toggle on and off aspects of Buccaneer at run
 
 A typical application launch is as follows:
 ```
-MyBuccaneerApplication.exe -BuccaneerURL="127.0.0.1:8000"
+MyBuccaneerApplication.exe -BuccaneerURL="http://127.0.0.1:8000"
 ```
 
 
@@ -134,9 +134,9 @@ To try Buccaneer with a demo project, you can use the Docker Compose demo locate
 
 To start the demo, simply run the command `docker compose up` in the [Examples/Compose](./Examples/Compose) subdirectory. Docker Compose will automatically download all of the required container images and start the containers for each component of the stack. Once everything is running, open two web browser tabs:
 
-- <http://127.0.0.1> - this is a demo Unreal Engine application that uses Pixel Streaming to allow streaming via a browser.
+- <http://127.0.0.1> - This is a demo Unreal Engine application that uses Pixel Streaming to allow streaming via a browser.
 
-- <http://127.0.0.1:3000/dashboards> - this is the Grafana dashboard that displays metrics collected from the Unreal Engine application. Login using the username `admin` and the password `admin`, and select "Unreal Engine Metrics" from the list of available dashboards.
+- <http://127.0.0.1:3000/dashboards> - This is the Grafana dashboard that displays metrics collected from the Unreal Engine application. Log in using the username `admin` and the password `admin`, and select "Unreal Engine Metrics" from the list of available dashboards.
 
 
 ## Legal
