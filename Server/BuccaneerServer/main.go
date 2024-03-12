@@ -305,7 +305,7 @@ func main() {
 
 		// update lastUpdateTime
 		*currCollector.(collector).lastUpdateTime = time.Now().Unix()
-		collectorsMutex.Lock()
+		collectorsMutex.Unlock()
 		// return OK
 		res.WriteHeader(http.StatusOK)
 	})
