@@ -74,23 +74,21 @@ func removeStaleCollectors() {
 		collectors.Range(func(key, currCollector interface{}) bool {
 			collector := currCollector.(collector)
 			// TODO (belchy06): Perhaps this time should be configurable
-			if time.Now().Unix()-*collector.lastUpdateTime > 10 {
-				// Collector hasn't been update in X seconds, unregister and remove from our map
-				log.Printf("Deregistering collector for instance \"%s\"", key)
-				prometheus.Unregister(&collector)
-				collectors.Delete(key)
-			}
-
-			prometheus.Unregister(&collector)
 			for name, metric := range collector.metrics {
 				for id, record := range metric.records {
-					if time.Now().Unix()-record.time > 10 {
+					if time.Now().Unix()-record.time > 60 {
 						log.Printf("Deregistering \"%s\" records for player \"%s\"", name, id)
 						delete(metric.records, id)
 					}
 				}
 			}
-			prometheus.Register(&collector)
+
+			if time.Now().Unix()-*collector.lastUpdateTime > 60 {
+				// Collector hasn't been update in X seconds, unregister and remove from our map
+				log.Printf("Deregistering collector for instance \"%s\"", key)
+				prometheus.Unregister(&collector)
+				collectors.Delete(key)
+			}
 			return true
 		})
 		collectorsMutex.Unlock()
@@ -231,80 +229,53 @@ func main() {
 		}
 
 		// collector should exist at this point, but check just to be sure
-		currCollector, exists := collectors.Load(id.(string))
+		temp, exists := collectors.Load(id.(string))
 		if !exists {
 			http.Error(res, "Unable to load collector", http.StatusBadRequest)
 			return
 		}
 
 		collectorsMutex.Lock()
+
+		collector := temp.(collector)
 		metricsJson := data.(map[string]interface{})
 		// iterate over all the fields in the "metrics" section
 		for key, value := range metricsJson {
 			metricJson := value.(map[string]interface{})
 
-			if entry, ok := currCollector.(collector).metrics[key]; ok {
-				// update value of copy
-				if valueArray, ok := metricJson["value"].([]interface{}); ok {
-					// if the value object is an array, then loop through this array
-					for _, val := range valueArray {
-						for k, v := range val.(map[string]interface{}) {
-							entry.records[k] = record{
-								value: v.(float64),
-								time:  time.Now().Unix(),
-							}
+			if valueArray, ok := metricJson["value"].([]interface{}); ok {
+				// if the value object is an array, then loop through this array
+				recordMap := make(map[string]record)
+				for _, val := range valueArray {
+					for k, v := range val.(map[string]interface{}) {
+						recordMap[k] = record{
+							value: v.(float64),
+							time:  time.Now().Unix(),
 						}
-					}
-				} else {
-					entry.records[""] = record{
-						value: metricJson["value"].(float64),
-						time:  time.Now().Unix(),
 					}
 				}
 
-				// assign copy to metric
-				currCollector.(collector).metrics[key] = entry
+				collector.metrics[key] = metric{
+					description: prometheus.NewDesc(key, metricJson["description"].(string), []string{"player"}, collector.metadata),
+					records:     recordMap,
+				}
 			} else {
-				// Unregister the collector from prometheus so we can modify it
-				temp := currCollector.(collector)
-				prometheus.Unregister(&temp)
-
-				if valueArray, ok := metricJson["value"].([]interface{}); ok {
-					// if the value object is an array, then loop through this array
-					recordMap := make(map[string]record)
-					for _, val := range valueArray {
-						for k, v := range val.(map[string]interface{}) {
-							recordMap[k] = record{
-								value: v.(float64),
-								time:  time.Now().Unix(),
-							}
-						}
-					}
-
-					temp.metrics[key] = metric{
-						description: prometheus.NewDesc(key, metricJson["description"].(string), []string{"player"}, temp.metadata),
-						records:     recordMap,
-					}
-				} else {
-					recordMap := make(map[string]record)
-					recordMap[""] = record{
-						value: metricJson["value"].(float64),
-						time:  time.Now().Unix(),
-					}
-					temp.metrics[key] = metric{
-						description: prometheus.NewDesc(key, metricJson["description"].(string), nil, temp.metadata),
-						records:     recordMap,
-					}
+				recordMap := make(map[string]record)
+				recordMap[""] = record{
+					value: metricJson["value"].(float64),
+					time:  time.Now().Unix(),
 				}
-
-				collectors.Store(id, currCollector)
-				// register collector with Prometheus
-				prometheus.Register(&temp)
+				collector.metrics[key] = metric{
+					description: prometheus.NewDesc(key, metricJson["description"].(string), nil, collector.metadata),
+					records:     recordMap,
+				}
 			}
 		}
 
+		collectors.Store(id, collector)
+
 		// update lastUpdateTime
-		*currCollector.(collector).lastUpdateTime = time.Now().Unix()
+		*collector.lastUpdateTime = time.Now().Unix()
 		collectorsMutex.Unlock()
 		// return OK
 		res.WriteHeader(http.StatusOK)
