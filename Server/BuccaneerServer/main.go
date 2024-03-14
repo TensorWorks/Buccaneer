@@ -160,10 +160,10 @@ func main() {
 				lastUpdateTime: &ts,
 			}
 
-			if data := payload["metadata"]; data != nil {
-				// add the id to this collectors metadata
-				collector.metadata["id"] = id.(string)
+			// always add the id to this collectors metadata
+			collector.metadata["id"] = id.(string)
 
+			if data := payload["metadata"]; data != nil {
 				// add user specifed metadata to the collector
 				metadata := data.(map[string]interface{})
 				for key, value := range metadata {
