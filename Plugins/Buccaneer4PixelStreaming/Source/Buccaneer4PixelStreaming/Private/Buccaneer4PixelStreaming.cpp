@@ -1,77 +1,56 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Buccaneer4PixelStreaming.h"
-#include "Logging/LogMacros.h"
+
+#include "Logging.h"
 #include "PixelStreamingDelegates.h"
+#include "Buccaneer4PixelStreamingSettings.h"
 
-#define LOCTEXT_NAMESPACE "FBuccaneer4PixelStreamingModule"
-
-
-DEFINE_LOG_CATEGORY(BuccaneerPixelStreaming);
-
-namespace Buccaneer4PixelStreaming
-{
-	
-}
+TMap<FString, FString> StatDescriptionMap = {
+    {"jitterBufferDelay", "jitterBufferDelay"},
+    {"framesSent", "framesSent"},
+	{"framesPerSecond", "framesPerSecond"},
+	{"framesReceived", "framesReceived"},
+	{"framesDropped", "framesDropped"},
+	{"framesDecoded", "framesDecoded"},
+	{"framesCorrupted", "framesCorrupted"},
+	{"partialFramesLost", "partialFramesLost"},
+	{"fullFramesLost", "fullFramesLost"},
+	{"hugeFramesSent", "hugeFramesSent"},
+	{"jitterBufferTargetDelay", "jitterBufferTargetDelay"},
+	{"interruptionCount", "interruptionCount"},
+	{"totalInterruptionDuration", "totalInterruptionDuration"},
+	{"freezeCount", "freezeCount"},
+	{"pauseCount", "pauseCount"},
+	{"totalFreezesDuration", "totalFreezesDuration"},
+	{"totalPausesDuration", "totalPausesDuration"},
+	{"firCount", "firCount"},
+	{"pliCount", "pliCount"},
+	{"nackCount", "nackCount"},
+	{"sliCount", "sliCount"},
+	{"retransmittedBytesSent", "retransmittedBytesSent"},
+	{"totalEncodedBytesTarget", "totalEncodedBytesTarget"},
+	{"keyFramesEncoded", "keyFramesEncoded"},
+	{"frameWidth", "frameWidth"},
+	{"frameHeight", "frameHeight"},
+	{"bytesSent", "bytesSent"},
+	{"qpSum", "qpSum"},
+	{"totalEncodeTime", "totalEncodeTime"},
+	{"totalPacketSendDelay", "totalPacketSendDelay"},
+    {"packetSendDelay", "packetSendDelay"},
+	{"framesEncoded", "framesEncoded"},
+	{"transmitFps", "transmit fps"},
+	{"bitrate", "bitrate (kb/s)"},
+	{"qp", "qp"},
+	{"encodeTime", "encode time (ms)"},
+	{"encodeFps", "encode fps"},
+	{"captureToSend", "capture to send (ms)"},
+	{"captureFps", "capture fps"}
+};
 
 void FBuccaneer4PixelStreamingModule::StartupModule()
 {
-    StatDescriptionMap = {
-        {"jitterBufferDelay", "jitterBufferDelay"},
-        {"framesSent", "framesSent"},
-	    {"framesPerSecond", "framesPerSecond"},
-	    {"framesReceived", "framesReceived"},
-	    {"framesDropped", "framesDropped"},
-	    {"framesDecoded", "framesDecoded"},
-	    {"framesCorrupted", "framesCorrupted"},
-	    {"partialFramesLost", "partialFramesLost"},
-	    {"fullFramesLost", "fullFramesLost"},
-	    {"hugeFramesSent", "hugeFramesSent"},
-	    {"jitterBufferTargetDelay", "jitterBufferTargetDelay"},
-	    {"interruptionCount", "interruptionCount"},
-	    {"totalInterruptionDuration", "totalInterruptionDuration"},
-	    {"freezeCount", "freezeCount"},
-	    {"pauseCount", "pauseCount"},
-	    {"totalFreezesDuration", "totalFreezesDuration"},
-	    {"totalPausesDuration", "totalPausesDuration"},
-	    {"firCount", "firCount"},
-	    {"pliCount", "pliCount"},
-	    {"nackCount", "nackCount"},
-	    {"sliCount", "sliCount"},
-	    {"retransmittedBytesSent", "retransmittedBytesSent"},
-	    {"totalEncodedBytesTarget", "totalEncodedBytesTarget"},
-	    {"keyFramesEncoded", "keyFramesEncoded"},
-	    {"frameWidth", "frameWidth"},
-	    {"frameHeight", "frameHeight"},
-	    {"bytesSent", "bytesSent"},
-	    {"qpSum", "qpSum"},
-	    {"totalEncodeTime", "totalEncodeTime"},
-	    {"totalPacketSendDelay", "totalPacketSendDelay"},
-        {"packetSendDelay", "packetSendDelay"},
-	    {"framesEncoded", "framesEncoded"},
-	    {"transmitFps", "transmit fps"},
-	    {"bitrate", "bitrate (kb/s)"},
-	    {"qp", "qp"},
-	    {"encodeTime", "encode time (ms)"},
-	    {"encodeFps", "encode fps"},
-	    {"captureToSend", "capture to send (ms)"},
-	    {"captureFps", "capture fps"}
-    };
-
-	CVarBuccaneer4PixelStreamingEnableStats = IConsoleManager::Get().RegisterConsoleVariable(
-		TEXT("Buccaneer4PixelStreaming.EnableStats"),
-		true,
-		TEXT("Disables the collection and logging of Pixel Streaming stats with Buccaneer"),
-		ECVF_Default);
-
-    Setup();
-}
-
-void FBuccaneer4PixelStreamingModule::Setup()
-{
-    FBuccaneerCommonModule::ParseCommandLineOption(TEXT("Buccaneer4PixelStreamingEnableStats"), CVarBuccaneer4PixelStreamingEnableStats);
-
-	LoggingStart = FPlatformTime::Seconds();
+    LoggingStart = FPlatformTime::Seconds();
 	ReportingInterval = 1;
 
     JsonObject =  MakeShareable(new FJsonObject());
@@ -90,7 +69,7 @@ void FBuccaneer4PixelStreamingModule::ShutdownModule()
 
 void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId PlayerId, FName StatName, float StatValue)
 {
-    if(!CVarBuccaneer4PixelStreamingEnableStats->GetBool() || PlayerId == TEXT("Application"))
+    if (!UBuccaneer4PixelStreamingSettings::CVarEnabled.GetValueOnAnyThread() || PlayerId == TEXT("Application"))
 	{
 		return;
 	}
@@ -102,11 +81,11 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
     *      ]
     * }
     */
-
-    const TSharedPtr<FJsonObject>* MetricJson = nullptr;
-	if(JsonObject->TryGetObjectField((TEXT("%s"), *StatName.ToString()), MetricJson))
+    const TSharedPtr<FJsonObject> MetricJson;
+	const TSharedPtr<FJsonObject>* MetricJsonPtr = &MetricJson;
+	if(JsonObject->TryGetObjectField(*StatName.ToString(), MetricJsonPtr))
 	{
-		TArray<TSharedPtr<FJsonValue>> ValueArray = (*MetricJson)->GetArrayField(TEXT("value"));
+		TArray<TSharedPtr<FJsonValue>> ValueArray = MetricJson->GetArrayField(TEXT("value"));
 
         bool bRequiresCreation = true;
         for (int i = 0; i < ValueArray.Num(); i++) 
@@ -129,18 +108,18 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 
             ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
 
-            (*MetricJson)->SetArrayField((TEXT("value")), ValueArray);
+            MetricJson->SetArrayField((TEXT("value")), ValueArray);
 		}
 	}
 	else
 	{
         if(!StatDescriptionMap.Contains(*StatName.ToString()))
         {
-            UE_LOG(BuccaneerPixelStreaming, Log, TEXT("%s"), *StatName.ToString());
+            UE_LOGFMT(LogBuccaneer4PixelStreaming, Log, "{0}", StatName.ToString());
             return;
         }
         TSharedPtr<FJsonObject> NewMetricJson = MakeShareable(new FJsonObject());
-        NewMetricJson->SetField("description", MakeShared<FJsonValueString>((TEXT("%s"), *StatDescriptionMap[*StatName.ToString()])));
+        NewMetricJson->SetField("description", MakeShared<FJsonValueString>(*StatDescriptionMap[*StatName.ToString()]));
 
 		
         TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
@@ -151,7 +130,7 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 		
         NewMetricJson->SetArrayField((TEXT("value")), ValueArray);
 
-		JsonObject->SetObjectField((TEXT("%s"), *StatName.ToString()), NewMetricJson);
+		JsonObject->SetObjectField(*StatName.ToString(), NewMetricJson);
 	}
 
     double NowTime = FPlatformTime::Seconds();
@@ -160,12 +139,10 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 		LoggingStart = NowTime;
         TSharedPtr<FJsonObject> PayloadJson =  MakeShareable(new FJsonObject());
         PayloadJson->SetObjectField(TEXT("metrics"), JsonObject);
-		FBuccaneerCommonModule::GetModule()->SendStats(PayloadJson);
+		IBuccaneerCommonModule::Get().SendStats(PayloadJson);
 
-        JsonObject =  MakeShareable(new FJsonObject());
+        JsonObject = MakeShareable(new FJsonObject());
 	}
 }
-
-#undef LOCTEXT_NAMESPACE
 	
 IMPLEMENT_MODULE(FBuccaneer4PixelStreamingModule, Buccaneer4PixelStreaming)
