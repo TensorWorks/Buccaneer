@@ -1,4 +1,5 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
+
 
 #include "Buccaneer4PixelStreaming.h"
 
