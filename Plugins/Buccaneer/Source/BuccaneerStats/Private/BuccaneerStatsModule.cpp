@@ -1,35 +1,34 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
-#include "TimeSeriesDataEmitter.h"
+#include "BuccaneerStatsModule.h"
+
+#include "BuccaneerSettings.h"
 #include "CoreMinimal.h"
 #include "Engine/Engine.h"
+#include "IBuccaneerEventsModule.h"
+#include "Logging.h"
 #include "RHI.h"
-#include "SemanticEventEmitter.h"
-#include "BuccaneerCommon.h"
 #include "Stats/Stats.h"
 #include "Stats/StatsData.h"
-#define LOCTEXT_NAMESPACE "FTimeSeriesDataEmitterModule"
 
 #define COMPUTE_MEAN(CurrentMean, NewTime, FrameCount) \
     ((FrameCount - 1) * CurrentMean + NewTime) / FrameCount;
 
-DEFINE_LOG_CATEGORY(TimeSeriesDataEmitter);
+TMap<FString, FString> StatDescriptionMap = {
+    { "mean_fps", "The average fps" },
+    { "mean_frametime", "The average frametime" },
+    { "mean_gamethreadtime", "The average game thread time" },
+    { "mean_gputime", "The average gpu time" },
+    { "mean_rendertime", "The average render thread time" },
+    { "mean_rhithreadtime", "The average rhi thread time" },
+    { "memory_virtual", "The virtual memory usage" },
+    { "memory_physical", "The physical memory usage" },
+    { "memory_gpu", "The gpu memory usage" },
+    { "num_hangs", "The number of frames hung in the recording interval" }
+};
 
-void FTimeSeriesDataEmitterModule::StartupModule()
+void FBuccaneerStatsModule::StartupModule()
 {
-    StatDescriptionMap = {
-        { "mean_fps", "The average fps" },
-        { "mean_frametime", "The average frametime" },
-        { "mean_gamethreadtime", "The average game thread time" },
-        { "mean_gputime", "The average gpu time" },
-        { "mean_rendertime", "The average render thread time" },
-        { "mean_rhithreadtime", "The average rhi thread time" },
-        { "memory_virtual", "The virtual memory usage" },
-        { "memory_physical", "The physical memory usage" },
-        { "memory_gpu", "The gpu memory usage" },
-        { "num_hangs", "The number of frames hung in the recording interval" }
-    };
-
     MetricJson = MakeShareable(new FJsonObject());
     JsonObject = MakeShareable(new FJsonObject());
     JsonObject->SetField(TEXT("metrics"), MakeShared<FJsonValueObject>(MetricJson));
@@ -37,11 +36,11 @@ void FTimeSeriesDataEmitterModule::StartupModule()
     LastTickTime = InterimStart = FPlatformTime::Seconds();
 }
 
-void FTimeSeriesDataEmitterModule::UpdateMetric(FString Name, double Value)
+void FBuccaneerStatsModule::UpdateMetric(FString Name, double Value)
 {
     if(!StatDescriptionMap.Contains(Name))
     {
-        UE_LOG(TimeSeriesDataEmitter, Log, TEXT("No description for metric (%s)"), *Name);
+        UE_LOGFMT(LogBuccaneerStats, Log, "No description for metric {0}", Name);
         return;
     }
 
@@ -51,25 +50,25 @@ void FTimeSeriesDataEmitterModule::UpdateMetric(FString Name, double Value)
     MetricJson->SetField(*Name, MakeShared<FJsonValueObject>(MetricInfoJson));
 }
 
-void FTimeSeriesDataEmitterModule::ShutdownModule()
+void FBuccaneerStatsModule::ShutdownModule()
 {
     // This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
     // we call this function before unloading the module.
 }
 
-bool FTimeSeriesDataEmitterModule::IsTickableWhenPaused() const
+bool FBuccaneerStatsModule::IsTickableWhenPaused() const
 {
     return true;
 }
 
-bool FTimeSeriesDataEmitterModule::IsTickableInEditor() const
+bool FBuccaneerStatsModule::IsTickableInEditor() const
 {
     return true;
 }
 
-void FTimeSeriesDataEmitterModule::Tick(float DeltaTime)
+void FBuccaneerStatsModule::Tick(float DeltaTime)
 {
-    if (!FBuccaneerCommonModule::GetModule()->CVarBuccaneerEnableStats->GetBool())
+    if (!UBuccaneerSettings::CVarEnableStats->GetBool())
     {
         // Performance profiling hasn't been inititialized. Don't continue
         return;
@@ -83,11 +82,7 @@ void FTimeSeriesDataEmitterModule::Tick(float DeltaTime)
     if (FrameTime > 0.25)
     {
         InterimHangCount++;
-        FSemanticEventEmitterModule *Module = FSemanticEventEmitterModule::GetModule();
-        if (Module)
-        {
-            Module->EmitSemanticEvent(FString(TEXT("warning")), FString(TEXT("Frame hung")));
-        }
+        IBuccaneerEventsModule::Get().EmitEvent(TEXT("warning"), TEXT("Frame hung"));
     }
     else
     {
@@ -114,13 +109,13 @@ void FTimeSeriesDataEmitterModule::Tick(float DeltaTime)
     LastTickTime = NowTime;
 }
 
-void FTimeSeriesDataEmitterModule::ComputeUsedMemory()
+void FBuccaneerStatsModule::ComputeUsedMemory()
 {
     FPlatformMemoryStats MemoryStats = FPlatformMemory::GetStats();
 
-    const unsigned int BitsPerMB = (8u * 1024u * 1024u);
-    UsedVirtualMemory = static_cast<double>(MemoryStats.UsedVirtual) / BitsPerMB;
-    UsedPhysicalMemory = static_cast<double>(MemoryStats.UsedPhysical) / BitsPerMB;
+    const unsigned int BytesPerMB = (8u * 1024u * 1024u);
+    UsedVirtualMemory = static_cast<double>(MemoryStats.UsedVirtual) / BytesPerMB;
+    UsedPhysicalMemory = static_cast<double>(MemoryStats.UsedPhysical) / BytesPerMB;
 
 #if !UE_BUILD_SHIPPING
     TArray<FStatMessage> Stats;
@@ -141,7 +136,7 @@ void FTimeSeriesDataEmitterModule::ComputeUsedMemory()
 #endif    
 }
 
-void FTimeSeriesDataEmitterModule::PushStatsHTTP()
+void FBuccaneerStatsModule::PushStatsHTTP()
 {
     // Collected Metrics
     //              name           value
@@ -156,14 +151,14 @@ void FTimeSeriesDataEmitterModule::PushStatsHTTP()
     UpdateMetric("memory_gpu", UsedGPUMemory);
     UpdateMetric("num_hangs", InterimHangCount);
 
-    FBuccaneerCommonModule::GetModule()->SendStats(JsonObject);
+    IBuccaneerCommonModule::Get().SendStats(JsonObject);
 }
 
-TStatId FTimeSeriesDataEmitterModule::GetStatId() const
+TStatId FBuccaneerStatsModule::GetStatId() const
 {
-    RETURN_QUICK_DECLARE_CYCLE_STAT(FTimeSeriesDataEmitterModule, STATGROUP_Tickables);
+    RETURN_QUICK_DECLARE_CYCLE_STAT(FBuccaneerStatsModule, STATGROUP_Tickables);
 }
 
-#undef LOCTEXT_NAMESPACE
+#undef COMPUTE_MEAN
 
-IMPLEMENT_MODULE(FTimeSeriesDataEmitterModule, TimeSeriesDataEmitter)
+IMPLEMENT_MODULE(FBuccaneerStatsModule, BuccaneerStats)

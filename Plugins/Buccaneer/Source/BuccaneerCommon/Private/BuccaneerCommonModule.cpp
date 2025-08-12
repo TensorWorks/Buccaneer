@@ -1,0 +1,122 @@
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
+
+#include "BuccaneerCommonModule.h"
+
+#include "BuccaneerSettings.h"
+#include "HttpModule.h"
+#include "Interfaces/IHttpRequest.h"
+#include "Interfaces/IHttpResponse.h"
+#include "Logging.h"
+
+void FBuccaneerCommonModule::StartupModule()
+{
+    if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread().IsEmpty())
+    {
+        UE_LOGFMT(LogBuccaneerCommon, Warning, "Buccanner events and stats disabled, provide `BuccaneerURL` cmd-args to enable it");
+        UBuccaneerSettings::CVarEnableStats->Set(false, ECVF_SetByCommandline);
+        UBuccaneerSettings::CVarEnableEvents->Set(false, ECVF_SetByCommandline);
+        return;
+    }
+
+    FString InstanceIDOverride;
+    // Try and parse a pixel streaming ID for users who don't want to pollute their command line by specifying two IDs
+    if (FParse::Value(FCommandLine::Get(), TEXT("PixelStreamingID="), InstanceIDOverride))
+    {
+        UBuccaneerSettings::CVarID->Set(*InstanceIDOverride, ECVF_SetByCommandline);
+    }
+
+    if (UBuccaneerSettings::FDelegates* Delegates = UBuccaneerSettings::Delegates())
+	{
+		Delegates->OnMetadataChanged.AddRaw(this, &FBuccaneerCommonModule::FormatMetadata);
+	}
+
+    FormatMetadata(nullptr);
+
+    bModuleReady = true;
+    ReadyEvent.Broadcast(*this);
+}
+
+void FBuccaneerCommonModule::ShutdownModule()
+{
+}
+
+FBuccaneerCommonModule::FReadyEvent& FBuccaneerCommonModule::OnReady()
+{
+    return ReadyEvent;
+}
+
+bool FBuccaneerCommonModule::IsReady()
+{
+    return bModuleReady;
+}
+
+void FBuccaneerCommonModule::SendStats(TSharedPtr<FJsonObject> JsonObject)
+{
+    JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *UBuccaneerSettings::CVarID.GetValueOnAnyThread())));
+    JsonObject->SetField("metadata", MakeShared<FJsonValueObject>(MetadataJson));
+    SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/stats"), JsonObject);
+}
+
+void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
+{
+    JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *UBuccaneerSettings::CVarID.GetValueOnAnyThread())));
+    SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/event"), JsonObject);
+}
+
+void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject)
+{
+    FHttpRequestRef HttpRequest = FHttpModule::Get().CreateRequest();
+
+    FString Body;
+    TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&Body);
+    if (!ensure(FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter)))
+    {
+        UE_LOGFMT(LogBuccaneerCommon, Warning, "Cannot serialize json object");
+    }
+
+    HttpRequest->SetURL(URL);
+    HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
+    HttpRequest->SetVerb(TEXT("POST"));
+    HttpRequest->SetContentAsString(Body);
+    HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded)
+    {
+        FString ResponseStr, ErrorStr;
+
+        if (bSucceeded && HttpResponse.IsValid())
+        {
+            ResponseStr = HttpResponse->GetContentAsString();
+            if (!EHttpResponseCodes::IsOk(HttpResponse->GetResponseCode()))
+            {
+                ErrorStr = FString::Printf(TEXT("Invalid response. code=%d error=%s"), HttpResponse->GetResponseCode(), *ResponseStr);
+            }
+        }
+        else
+        {
+            ErrorStr = TEXT("No response");
+        }
+
+        if (!ErrorStr.IsEmpty())
+        {
+            UE_LOGFMT(LogBuccaneerCommon, Warning, "Push event response: {0}", *ErrorStr);
+        }
+    });
+
+    HttpRequest->ProcessRequest();
+}
+
+void FBuccaneerCommonModule::FormatMetadata(IConsoleVariable* Var)
+{
+    // Additional Metadata
+    TMap<FString, FString> MetadataMap = UBuccaneerSettings::GetMetadata();
+    for (const TPair<FString, FString>& Pair : MetadataMap)
+    {
+        if(Pair.Key.IsEmpty() || Pair.Value.IsEmpty())
+        {
+            continue;
+        }
+        
+        MetadataJson->SetField(*Pair.Key, MakeShared<FJsonValueString>((TEXT("%s"), *Pair.Value)));
+    }
+}
+
+IMPLEMENT_MODULE(FBuccaneerCommonModule, BuccaneerCommon)

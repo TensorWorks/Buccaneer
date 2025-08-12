@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
 using UnrealBuildTool;
 
@@ -17,6 +17,9 @@ public class BuccaneerCommon : ModuleRules
 
 		PublicDependencyModuleNames.AddRange(new string[]{
 			"HTTP",
+			"CoreUObject",
+			"DeveloperSettings",
+			"EngineSettings"
 		});
 	}
 }

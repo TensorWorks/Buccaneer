@@ -1,16 +1,15 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Modules/ModuleManager.h"
-#include "BuccaneerCommon.h"
-#include "Tickable.h"
 #include "Dom/JsonObject.h"
+#include "IBuccaneerCommonModule.h"
+#include "IBuccaneerStatsModule.h"
+#include "Modules/ModuleManager.h"
+#include "Tickable.h"
 
-DECLARE_LOG_CATEGORY_EXTERN(TimeSeriesDataEmitter, Log, All);
-
-class TIMESERIESDATAEMITTER_API FTimeSeriesDataEmitterModule : public IModuleInterface, public FTickableGameObject
+class FBuccaneerStatsModule : public IBuccaneerStatsModule, public FTickableGameObject
 {
 public:
     /** IModuleInterface implementation */
@@ -50,6 +49,4 @@ private:
     // Variable for storing logging URL and logging object
     TSharedPtr<FJsonObject> JsonObject;
     TSharedPtr<FJsonObject> MetricJson;
-
-    TMap<FString, FString> StatDescriptionMap;
 };

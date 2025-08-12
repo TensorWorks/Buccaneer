@@ -2,9 +2,9 @@
 
 using UnrealBuildTool;
 
-public class SemanticEventEmitter : ModuleRules
+public class BuccaneerEvents : ModuleRules
 {
-	public SemanticEventEmitter(ReadOnlyTargetRules Target) : base(Target)
+	public BuccaneerEvents(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
