@@ -2,40 +2,12 @@
 
 #include "Buccaneer4PixelStreaming2Settings.h"
 
+#include "BuccaneerSettings.h"
 #include "Logging.h"
 #include "Misc/CommandLine.h"
 #include "UObject/ReflectedTypeAccessors.h"
 
-namespace Util
-{
-    FString ConsoleVariableToCommandArgValue(const FString InCVarName)
-	{
-		// CVars are . deliminated by section. To get their equivilent commandline arg for parsing
-		// we need to remove the . and add a "="
-		return InCVarName.Replace(TEXT("."), TEXT("")).Append(TEXT("="));
-	}
-
-	FString ConsoleVariableToCommandArgParam(const FString InCVarName)
-	{
-		// CVars are . deliminated by section. To get their equivilent commandline arg parameter, we need to to remove the .
-		return InCVarName.Replace(TEXT("."), TEXT(""));
-	}
-
-    FString FindCVarFromProperty(const TSet<TPair<FString, FString>> Set, const FString& Value)
-	{
-		for (const TPair<FString, FString>& Pair : Set)
-		{
-			if (Pair.Value == Value)
-			{
-				return Pair.Key;
-			}
-		}
-
-		return "";
-	}
-}
-
-static const TSet<TPair<FString, FString>> GetCmdArg = {
+static const TSet<TPair<FString, FString>> GetCmdLineArg = {
 	{ "Buccaneer4PixelStreaming2.EnableStats", "Enabled" }
 };
 
@@ -63,7 +35,7 @@ void UBuccaneer4PixelStreaming2Settings::PostEditChangeProperty(FPropertyChanged
 	FString PropertyName = PropertyChangedEvent.Property->GetNameCPP();
 
 	FString CVarName;
-	if (CVarName = Util::FindCVarFromProperty(GetCmdArg, PropertyName); !CVarName.IsEmpty())
+	if (CVarName = Util::FindCVarFromProperty(GetCmdLineArg, PropertyName); !CVarName.IsEmpty())
 	{
         SetCVarFromProperty(CVarName, PropertyChangedEvent.Property);
 	}
@@ -223,7 +195,7 @@ void UBuccaneer4PixelStreaming2Settings::InitializeCVarsFromProperties()
 		}
 
 		FString CVarName;
-		if (CVarName = Util::FindCVarFromProperty(GetCmdArg, Property->GetNameCPP()); !CVarName.IsEmpty())
+		if (CVarName = Util::FindCVarFromProperty(GetCmdLineArg, Property->GetNameCPP()); !CVarName.IsEmpty())
 		{
 			SetCVarFromProperty(CVarName, Property);
 			continue;
@@ -254,7 +226,7 @@ void UBuccaneer4PixelStreaming2Settings::ValidateCommandLineArgs()
 		}
 
 		bool bValidArg = false;
-		for (const TPair<FString, FString>& Pair : GetCmdArg)
+		for (const TPair<FString, FString>& Pair : GetCmdLineArg)
 		{
 			FString ValidCommandLineArg = Util::ConsoleVariableToCommandArgParam(Pair.Key);
 			if (CurrentCommandLineArg == ValidCommandLineArg)
@@ -274,7 +246,7 @@ void UBuccaneer4PixelStreaming2Settings::ValidateCommandLineArgs()
 void UBuccaneer4PixelStreaming2Settings::ParseCommandlineArgs()
 {
 	UE_LOGFMT(LogBuccaneer4PixelStreaming2, Verbose, "Updating CVars and properties with command line args");
-	for (const TPair<FString, FString>& Pair : GetCmdArg)
+	for (const TPair<FString, FString>& Pair : GetCmdLineArg)
 	{
 		FString CVarString = Pair.Key;
 		FString PropertyName = Pair.Value;

@@ -1,12 +1,11 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
-
 #include "Buccaneer4PixelStreaming2.h"
 
 #include "Logging.h"
 #include "Buccaneer4PixelStreaming2Settings.h"
 
-TMap<FString, FString> StatDescriptionMap = {
+TMap<FString, FString> PSStatDescriptionMap = {
     {"jitterBufferDelay", "jitterBufferDelay"},
     {"framesSent", "framesSent"},
 	{"framesPerSecond", "framesPerSecond"},
@@ -113,13 +112,13 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
 	}
 	else
 	{
-        if(!StatDescriptionMap.Contains(*StatName.ToString()))
+        if(!PSStatDescriptionMap.Contains(*StatName.ToString()))
         {
             UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "{0}", StatName.ToString());
             return;
         }
         TSharedPtr<FJsonObject> NewMetricJson = MakeShareable(new FJsonObject());
-        NewMetricJson->SetField("description", MakeShared<FJsonValueString>(*StatDescriptionMap[*StatName.ToString()]));
+        NewMetricJson->SetField("description", MakeShared<FJsonValueString>(*PSStatDescriptionMap[*StatName.ToString()]));
 
 		
         TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());

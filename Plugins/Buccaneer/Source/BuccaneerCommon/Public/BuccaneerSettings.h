@@ -8,6 +8,15 @@
 
 #include "BuccaneerSettings.generated.h"
 
+namespace Util
+{
+    BUCCANEERCOMMON_API FString ConsoleVariableToCommandArgValue(const FString InCVarName);
+
+	BUCCANEERCOMMON_API FString ConsoleVariableToCommandArgParam(const FString InCVarName);
+
+    BUCCANEERCOMMON_API FString FindCVarFromProperty(const TSet<TPair<FString, FString>> Set, const FString& Value);
+}
+
 // Config loaded/saved to an .ini file.
 // It is also exposed through the plugin settings page in editor.
 UCLASS(config = Game, defaultconfig, meta = (DisplayName = "Buccaneer"))

@@ -1,6 +1,5 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
-
 using UnrealBuildTool;
 
 public class Buccaneer4PixelStreaming2 : ModuleRules

@@ -2,38 +2,10 @@
 
 #include "Buccaneer4PixelStreamingSettings.h"
 
+#include "BuccaneerSettings.h"
 #include "Logging.h"
 #include "Misc/CommandLine.h"
 #include "UObject/ReflectedTypeAccessors.h"
-
-namespace Util
-{
-    FString ConsoleVariableToCommandArgValue(const FString InCVarName)
-	{
-		// CVars are . deliminated by section. To get their equivilent commandline arg for parsing
-		// we need to remove the . and add a "="
-		return InCVarName.Replace(TEXT("."), TEXT("")).Append(TEXT("="));
-	}
-
-	FString ConsoleVariableToCommandArgParam(const FString InCVarName)
-	{
-		// CVars are . deliminated by section. To get their equivilent commandline arg parameter, we need to to remove the .
-		return InCVarName.Replace(TEXT("."), TEXT(""));
-	}
-
-    FString FindCVarFromProperty(const TSet<TPair<FString, FString>> Set, const FString& Value)
-	{
-		for (const TPair<FString, FString>& Pair : Set)
-		{
-			if (Pair.Value == Value)
-			{
-				return Pair.Key;
-			}
-		}
-
-		return "";
-	}
-}
 
 static const TSet<TPair<FString, FString>> GetCmdArg = {
 	{ "Buccaneer4PixelStreaming.EnableStats", "Enabled" }
