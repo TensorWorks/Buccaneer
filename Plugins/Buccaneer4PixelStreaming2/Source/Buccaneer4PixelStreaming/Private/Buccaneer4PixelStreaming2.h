@@ -20,7 +20,6 @@ public:
 	
 private:
 	double LoggingStart;
-	double ReportingInterval;
 
     TSharedPtr<FJsonObject> JsonObject;
 };

@@ -92,7 +92,8 @@ static const TSet<TPair<FString, FString>> GetCmdArg = {
     { "Buccaneer.ID", "ID" },
 	{ "Buccaneer.EnableStats", "EnableStats" },
 	{ "Buccaneer.EnableEvents", "EnableEvents" },
-    { "Buccaneer.Metadata", "Metadata" }
+    { "Buccaneer.Metadata", "Metadata" },
+	{ "Buccaneer.ReportingInterval", "ReportingInterval" }
 };
 
 // Map a legacy cvar to its new property
@@ -130,6 +131,12 @@ TAutoConsoleVariable<FString> UBuccaneerSettings::CVarMetadata(
 	TEXT(""),
 	TEXT(""),
     FConsoleVariableDelegate::CreateLambda([](IConsoleVariable* Var) { Delegates()->OnMetadataChanged.Broadcast(Var); }),
+	ECVF_Default);
+
+TAutoConsoleVariable<float> UBuccaneerSettings::CVarReportingInterval(
+	TEXT("Buccaneer.ReportingInterval"),
+	1.0f,
+	TEXT("The interval at which to report performance metrics (default: 1.0 seconds)"),
 	ECVF_Default);
 
 UBuccaneerSettings::FDelegates* UBuccaneerSettings::DelegateSingleton = nullptr;

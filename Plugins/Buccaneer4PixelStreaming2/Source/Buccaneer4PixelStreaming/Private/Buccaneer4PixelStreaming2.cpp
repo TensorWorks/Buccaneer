@@ -50,7 +50,6 @@ TMap<FString, FString> PSStatDescriptionMap = {
 void FBuccaneer4PixelStreaming2Module::StartupModule()
 {
     LoggingStart = FPlatformTime::Seconds();
-	ReportingInterval = 1;
 
     JsonObject =  MakeShareable(new FJsonObject());
 
@@ -68,7 +67,7 @@ void FBuccaneer4PixelStreaming2Module::ShutdownModule()
 
 void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatName, float StatValue)
 {
-    if (!UBuccaneer4PixelStreaming2Settings::CVarEnabled.GetValueOnAnyThread() || PlayerId == TEXT("Application"))
+    if (!UBuccaneer4PixelStreaming2Settings::CVarEnabled.GetValueOnAnyThread() || PlayerId == TEXT("Application") || UBuccaneer4PixelStreaming2Settings::CVarReportingInterval.GetValueOnAnyThread() <= 0)
 	{
 		return;
 	}
@@ -80,11 +79,10 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
     *      ]
     * }
     */
-    const TSharedPtr<FJsonObject> MetricJson;
-	const TSharedPtr<FJsonObject>* MetricJsonPtr = &MetricJson;
-	if(JsonObject->TryGetObjectField(*StatName.ToString(), MetricJsonPtr))
+    const TSharedPtr<FJsonObject>* MetricJson = nullptr;
+	if(JsonObject->TryGetObjectField(*StatName.ToString(), MetricJson))
 	{
-		TArray<TSharedPtr<FJsonValue>> ValueArray = MetricJson->GetArrayField(TEXT("value"));
+		TArray<TSharedPtr<FJsonValue>> ValueArray = (*MetricJson)->GetArrayField(TEXT("value"));
 
         bool bRequiresCreation = true;
         for (int i = 0; i < ValueArray.Num(); i++) 
@@ -107,14 +105,14 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
 
             ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
 
-            MetricJson->SetArrayField((TEXT("value")), ValueArray);
+            (*MetricJson)->SetArrayField((TEXT("value")), ValueArray);
 		}
 	}
 	else
 	{
         if(!PSStatDescriptionMap.Contains(*StatName.ToString()))
         {
-            UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "{0}", StatName.ToString());
+            UE_LOGFMT(LogBuccaneer4PixelStreaming2, Verbose, "{0}", StatName.ToString());
             return;
         }
         TSharedPtr<FJsonObject> NewMetricJson = MakeShareable(new FJsonObject());
@@ -133,7 +131,7 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
 	}
 
     double NowTime = FPlatformTime::Seconds();
-	if ( (NowTime - LoggingStart) >= ReportingInterval )
+	if ((NowTime - LoggingStart) >= UBuccaneer4PixelStreaming2Settings::CVarReportingInterval.GetValueOnAnyThread())
 	{
 		LoggingStart = NowTime;
         TSharedPtr<FJsonObject> PayloadJson =  MakeShareable(new FJsonObject());

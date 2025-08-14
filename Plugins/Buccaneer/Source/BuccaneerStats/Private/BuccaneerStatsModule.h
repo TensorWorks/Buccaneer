@@ -30,7 +30,6 @@ private:
     // Time keeping variables
     double LastTickTime = 0.0;
     double InterimStart = 0.0;
-    double InterimDuration = 1.0;
     // Rolling average of times recorded during the defined period
     double InterimMeanFrameTime = 0.0;
     double InterimMeanGameThreadTime = 0.0;

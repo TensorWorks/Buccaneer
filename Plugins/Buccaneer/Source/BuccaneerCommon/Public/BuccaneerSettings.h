@@ -65,6 +65,13 @@ public:
 
 	static TMap<FString, FString> GetMetadata();
 
+	static TAutoConsoleVariable<float> CVarReportingInterval;
+	UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
+		DisplayName = "Reporting Interval (seconds)",
+		ToolTip = "The interval at which to report performance metrics. <= 0 disables reporting"
+		))
+    float ReportingInterval = 1.0f;
+
 	// Begin UDeveloperSettings Interface
 	virtual FName GetCategoryName() const override;
 

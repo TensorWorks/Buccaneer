@@ -25,6 +25,13 @@ public:
 		))
     bool Enabled = true;
 
+	static TAutoConsoleVariable<float> CVarReportingInterval;
+	UPROPERTY(config, EditAnywhere, Category = "Buccaneer4PixelStreaming2", meta = (
+		DisplayName = "Reporting Interval (seconds)",
+		ToolTip = "The interval at which to report Pixel Streaming 2 performance metrics. <= 0 disables reporting"
+		))
+    float ReportingInterval = 1.0f;
+
 	// Begin UDeveloperSettings Interface
 	virtual FName GetCategoryName() const override;
 

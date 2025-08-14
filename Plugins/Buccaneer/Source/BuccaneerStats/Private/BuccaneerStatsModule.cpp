@@ -68,7 +68,7 @@ bool FBuccaneerStatsModule::IsTickableInEditor() const
 
 void FBuccaneerStatsModule::Tick(float DeltaTime)
 {
-    if (!UBuccaneerSettings::CVarEnableStats->GetBool())
+    if (!UBuccaneerSettings::CVarEnableStats.GetValueOnAnyThread() || UBuccaneerSettings::CVarReportingInterval.GetValueOnAnyThread() <= 0)
     {
         // Performance profiling hasn't been inititialized. Don't continue
         return;
@@ -99,7 +99,7 @@ void FBuccaneerStatsModule::Tick(float DeltaTime)
 
         ComputeUsedMemory();
     }
-    if ((NowTime - InterimStart) >= InterimDuration)
+    if ((NowTime - InterimStart) >= UBuccaneerSettings::CVarReportingInterval.GetValueOnAnyThread())
     {
         PushStatsHTTP();
         InterimStart = NowTime;

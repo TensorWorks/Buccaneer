@@ -8,13 +8,20 @@
 #include "UObject/ReflectedTypeAccessors.h"
 
 static const TSet<TPair<FString, FString>> GetCmdLineArg = {
-	{ "Buccaneer4PixelStreaming2.EnableStats", "Enabled" }
+	{ "Buccaneer4PixelStreaming2.EnableStats", "Enabled" },
+	{ "Buccaneer4PixelStreaming2.ReportingInterval", "ReportingInterval" }
 };
 
 TAutoConsoleVariable<bool> UBuccaneer4PixelStreaming2Settings::CVarEnabled(
 	TEXT("Buccaneer4PixelStreaming2.EnableStats"),
 	true,
 	TEXT("Enables the collection and logging of Pixel Streaming stats with Buccaneer (default: true)"),
+	ECVF_Default);
+
+TAutoConsoleVariable<float> UBuccaneer4PixelStreaming2Settings::CVarReportingInterval(
+	TEXT("Buccaneer4PixelStreaming2.ReportingInterval"),
+	1.0f,
+	TEXT("The interval at which to report Pixel Streaming 2 performance metrics (default: 1.0 seconds)"),
 	ECVF_Default);
 
 FName UBuccaneer4PixelStreaming2Settings::GetCategoryName() const
