@@ -10,9 +10,9 @@
 
 void FBuccaneerCommonModule::StartupModule()
 {
-    if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread().IsEmpty())
+    if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread().IsEmpty() && !UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
     {
-        UE_LOGFMT(LogBuccaneerCommon, Warning, "Buccanner events and stats disabled, provide `BuccaneerURL` cmd-args to enable it");
+        UE_LOGFMT(LogBuccaneerCommon, Warning, "Buccanner events and stats disabled, provide `BuccaneerURL` or `BuccaneerEnableJSONOutput` cmd-args to enable it");
         UBuccaneerSettings::CVarEnableStats->Set(false, ECVF_SetByCommandline);
         UBuccaneerSettings::CVarEnableEvents->Set(false, ECVF_SetByCommandline);
         return;
@@ -54,13 +54,57 @@ void FBuccaneerCommonModule::SendStats(TSharedPtr<FJsonObject> JsonObject)
 {
     JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *UBuccaneerSettings::CVarID.GetValueOnAnyThread())));
     JsonObject->SetField("metadata", MakeShared<FJsonValueObject>(MetadataJson));
-    SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/stats"), JsonObject);
+
+    if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
+    {
+        SendJSON(TEXT("stats.json"), JsonObject);
+    }
+    else
+    {
+        SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/stats"), JsonObject);
+    }
 }
 
 void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
 {
     JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *UBuccaneerSettings::CVarID.GetValueOnAnyThread())));
-    SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/event"), JsonObject);
+
+    if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
+    {
+        SendJSON(TEXT("events.json"), JsonObject);
+    }
+    else
+    {
+        SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/event"), JsonObject);
+    }
+}
+
+void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject)
+{
+    FString FilePath = FPaths::Combine(UBuccaneerSettings::CVarJSONOutputDirectory.GetValueOnAnyThread(), FileName);
+
+    FString JsonString;
+    TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
+    if (!ensure(FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter)))
+    {
+        UE_LOGFMT(LogBuccaneerCommon, Warning, "Cannot serialize json object");
+        return;
+    }
+
+    FString FileContent;
+    FFileHelper::LoadFileToString(FileContent, *FilePath);
+
+    if (FileContent.IsEmpty())
+    {
+        FileContent = TEXT("[") + JsonString + TEXT("]");
+    }
+    else
+    {
+        FileContent.RemoveFromEnd(TEXT("]"));
+        FileContent += TEXT(",") + JsonString + TEXT("]");
+    }
+
+    FFileHelper::SaveStringToFile(FileContent, *FilePath);
 }
 
 void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject)

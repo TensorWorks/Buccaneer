@@ -22,6 +22,7 @@ private:
 
 private:
     void SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject);
+    void SendJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject);
     void FormatMetadata(IConsoleVariable* Var);
 
     TSharedPtr<FJsonObject> MetadataJson = MakeShareable(new FJsonObject());

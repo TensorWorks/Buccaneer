@@ -72,6 +72,20 @@ public:
 		))
     float ReportingInterval = 1.0f;
 
+    static TAutoConsoleVariable<bool> CVarEnableJSONOutput;
+    UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
+        DisplayName = "Enable JSON Output",
+        ToolTip = "Enables writing stats and events to a JSON file"
+        ))
+    bool EnableJSONOutput = false;
+
+    static TAutoConsoleVariable<FString> CVarJSONOutputDirectory;
+    UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
+        DisplayName = "JSON Output Directory",
+        ToolTip = "The directory to write JSON files to"
+        ))
+    FString JSONOutputDirectory = FPaths::ProjectLogDir();
+
 	// Begin UDeveloperSettings Interface
 	virtual FName GetCategoryName() const override;
 

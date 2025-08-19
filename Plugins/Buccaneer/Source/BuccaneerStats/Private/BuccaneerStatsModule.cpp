@@ -14,19 +14,6 @@
 #define COMPUTE_MEAN(CurrentMean, NewTime, FrameCount) \
     ((FrameCount - 1) * CurrentMean + NewTime) / FrameCount;
 
-TMap<FString, FString> StatDescriptionMap = {
-    { "mean_fps", "The average fps" },
-    { "mean_frametime", "The average frametime" },
-    { "mean_gamethreadtime", "The average game thread time" },
-    { "mean_gputime", "The average gpu time" },
-    { "mean_rendertime", "The average render thread time" },
-    { "mean_rhithreadtime", "The average rhi thread time" },
-    { "memory_virtual", "The virtual memory usage" },
-    { "memory_physical", "The physical memory usage" },
-    { "memory_gpu", "The gpu memory usage" },
-    { "num_hangs", "The number of frames hung in the recording interval" }
-};
-
 void FBuccaneerStatsModule::StartupModule()
 {
     MetricJson = MakeShareable(new FJsonObject());
@@ -38,16 +25,7 @@ void FBuccaneerStatsModule::StartupModule()
 
 void FBuccaneerStatsModule::UpdateMetric(FString Name, double Value)
 {
-    if(!StatDescriptionMap.Contains(Name))
-    {
-        UE_LOGFMT(LogBuccaneerStats, Log, "No description for metric {0}", Name);
-        return;
-    }
-
-    TSharedPtr<FJsonObject> MetricInfoJson = MakeShareable(new FJsonObject());
-    MetricInfoJson->SetField("description", MakeShared<FJsonValueString>((TEXT("%s"), *StatDescriptionMap[Name])));
-    MetricInfoJson->SetField("value", MakeShared<FJsonValueNumber>(Value));
-    MetricJson->SetField(*Name, MakeShared<FJsonValueObject>(MetricInfoJson));
+    MetricJson->SetField(*Name, MakeShared<FJsonValueNumber>(Value));
 }
 
 void FBuccaneerStatsModule::ShutdownModule()
@@ -150,6 +128,8 @@ void FBuccaneerStatsModule::PushStatsHTTP()
     UpdateMetric("memory_physical", UsedPhysicalMemory);
     UpdateMetric("memory_gpu", UsedGPUMemory);
     UpdateMetric("num_hangs", InterimHangCount);
+    
+    JsonObject->SetField(TEXT("timestamp"), MakeShared<FJsonValueString>(FDateTime::UtcNow().ToIso8601()));
 
     IBuccaneerCommonModule::Get().SendStats(JsonObject);
 }

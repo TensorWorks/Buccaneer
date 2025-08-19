@@ -93,7 +93,9 @@ static const TSet<TPair<FString, FString>> GetCmdArg = {
 	{ "Buccaneer.EnableStats", "EnableStats" },
 	{ "Buccaneer.EnableEvents", "EnableEvents" },
     { "Buccaneer.Metadata", "Metadata" },
-	{ "Buccaneer.ReportingInterval", "ReportingInterval" }
+	{ "Buccaneer.ReportingInterval", "ReportingInterval" },
+	{ "Buccaneer.EnableJSONOutput", "EnableJSONOutput" },
+	{ "Buccaneer.JSONOutputDirectory", "JSONOutputDirectory" }
 };
 
 // Map a legacy cvar to its new property
@@ -137,6 +139,18 @@ TAutoConsoleVariable<float> UBuccaneerSettings::CVarReportingInterval(
 	TEXT("Buccaneer.ReportingInterval"),
 	1.0f,
 	TEXT("The interval at which to report performance metrics (default: 1.0 seconds)"),
+	ECVF_Default);
+
+TAutoConsoleVariable<bool> UBuccaneerSettings::CVarEnableJSONOutput(
+	TEXT("Buccaneer.EnableJSONOutput"),
+	false,
+	TEXT("Enables writing stats and events to a JSON file (default: false)"),
+	ECVF_Default);
+
+TAutoConsoleVariable<FString> UBuccaneerSettings::CVarJSONOutputDirectory(
+	TEXT("Buccaneer.JSONOutputDirectory"),
+	TEXT(""),
+	TEXT("The directory to write JSON files to"),
 	ECVF_Default);
 
 UBuccaneerSettings::FDelegates* UBuccaneerSettings::DelegateSingleton = nullptr;
