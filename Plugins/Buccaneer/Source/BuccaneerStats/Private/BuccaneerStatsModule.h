@@ -47,5 +47,6 @@ private:
 
     // Variable for storing logging URL and logging object
     TSharedPtr<FJsonObject> JsonObject;
-    TSharedPtr<FJsonObject> MetricJson;
+
+	double AppStartTime = 0.0;
 };

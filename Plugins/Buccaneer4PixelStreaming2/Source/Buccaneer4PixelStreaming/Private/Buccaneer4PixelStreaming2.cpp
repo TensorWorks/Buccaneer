@@ -116,9 +116,7 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
             return;
         }
         TSharedPtr<FJsonObject> NewMetricJson = MakeShareable(new FJsonObject());
-        NewMetricJson->SetField("description", MakeShared<FJsonValueString>(*PSStatDescriptionMap[*StatName.ToString()]));
 
-		
         TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
         ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
 

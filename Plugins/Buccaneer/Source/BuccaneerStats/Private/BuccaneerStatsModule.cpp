@@ -10,22 +10,21 @@
 #include "RHI.h"
 #include "Stats/Stats.h"
 #include "Stats/StatsData.h"
+#include "Math/UnrealMathUtility.h"
 
 #define COMPUTE_MEAN(CurrentMean, NewTime, FrameCount) \
     ((FrameCount - 1) * CurrentMean + NewTime) / FrameCount;
 
 void FBuccaneerStatsModule::StartupModule()
 {
-    MetricJson = MakeShareable(new FJsonObject());
     JsonObject = MakeShareable(new FJsonObject());
-    JsonObject->SetField(TEXT("metrics"), MakeShared<FJsonValueObject>(MetricJson));
 
-    LastTickTime = InterimStart = FPlatformTime::Seconds();
+    AppStartTime = LastTickTime = InterimStart = FPlatformTime::Seconds();
 }
 
 void FBuccaneerStatsModule::UpdateMetric(FString Name, double Value)
 {
-    MetricJson->SetField(*Name, MakeShared<FJsonValueNumber>(Value));
+    JsonObject->SetField(*Name, MakeShared<FJsonValueNumber>(Value));
 }
 
 void FBuccaneerStatsModule::ShutdownModule()
@@ -128,8 +127,11 @@ void FBuccaneerStatsModule::PushStatsHTTP()
     UpdateMetric("memory_physical", UsedPhysicalMemory);
     UpdateMetric("memory_gpu", UsedGPUMemory);
     UpdateMetric("num_hangs", InterimHangCount);
-    
-    JsonObject->SetField(TEXT("timestamp"), MakeShared<FJsonValueString>(FDateTime::UtcNow().ToIso8601()));
+
+	const double ElapsedSeconds = FPlatformTime::Seconds() - AppStartTime;
+    const double ElapsedMilliseconds = ElapsedSeconds * 1000;
+    const int64 RoundedMilliseconds = FMath::RoundToInt64(ElapsedMilliseconds);
+    JsonObject->SetField(TEXT("timestamp"), MakeShared<FJsonValueNumber>(RoundedMilliseconds));
 
     IBuccaneerCommonModule::Get().SendStats(JsonObject);
 }
