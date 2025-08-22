@@ -101,7 +101,7 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
     bool bFileExists = FileManager.FileExists(*FilePath);
 
     // Open for read/write (no "truncate")
-    TUniquePtr<FArchive> FileAr(FileManager.CreateFileWriter(*FilePath, FILEWRITE_Append));
+    TUniquePtr<FArchive> FileAr(FileManager.CreateFileWriter(*FilePath, FILEWRITE_Append ));
 
     if (!FileAr)
     {
@@ -109,28 +109,22 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
         return;
     }
 
-    // If TotalSize is 0, the file was just created or was empty. 
-    if (FileAr->TotalSize() == 0)  
+     // If file is empty or just an empty array like "[]", start a new array.
+    if (FileAr->TotalSize() <= 2)  
     {
-        // First time writing: start a fresh JSON array
+        // First time writing OR writing to a corrupted file.
+        FileAr->Seek(0);
         FString Start = TEXT("[\n") + JsonString + TEXT("\n]");
         FTCHARToUTF8 Converter(*Start);
         FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
     else
     {
-        // Not first time writing: append new array to the end of the file, just before the "]"
-        const int64 CurrentSize = FileAr->TotalSize();  
-        if (CurrentSize < 2)
-        {  
-            UE_LOG(LogBuccaneerCommon, Error, TEXT("Cannot append to JSON file '%s': file is too small to be a valid array."), *FilePath);  
-            return;
-        } 
-
+        // Not first time writing: Insert new JSON at correct position. 
         // Seek before the last two characters, assuming they are '\n]'.  
 		FileAr->Seek(FileAr->TotalSize() - 2);
-        FString Append = TEXT(",\n") + JsonString + TEXT("\n]");
-		FTCHARToUTF8 Converter(*Append);
+        FString Content = TEXT(",\n") + JsonString + TEXT("\n]");
+		FTCHARToUTF8 Converter(*Content);
         FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
 
