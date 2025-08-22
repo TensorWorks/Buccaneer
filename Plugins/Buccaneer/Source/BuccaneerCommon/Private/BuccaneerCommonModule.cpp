@@ -8,6 +8,10 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Logging.h"
 
+#include "HAL/PlatformFilemanager.h"
+#include "Misc/FileHelper.h"
+#include "HAL/FileManager.h"
+
 void FBuccaneerCommonModule::StartupModule()
 {
     if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread().IsEmpty() && !UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
@@ -82,7 +86,9 @@ void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
 void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject)
 {
     FString FilePath = FPaths::Combine(UBuccaneerSettings::CVarJSONOutputDirectory.GetValueOnAnyThread(), FileName);
-
+	
+//  This is how we turn the JSON object into a string
+	
     FString JsonString;
     TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
     if (!ensure(FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter)))
@@ -90,21 +96,38 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
         UE_LOGFMT(LogBuccaneerCommon, Warning, "Cannot serialize json object");
         return;
     }
+	
+	IFileManager& FileManager = IFileManager::Get();
 
-    FString FileContent;
-    FFileHelper::LoadFileToString(FileContent, *FilePath);
+    // Check if file exists
+    bool bFileExists = FileManager.FileExists(*FilePath);
 
-    if (FileContent.IsEmpty())
+    // Open for read/write (no "truncate")
+    TUniquePtr<FArchive> FileAr(FileManager.CreateFileWriter(*FilePath, FILEWRITE_Append));
+
+    if (!FileAr)
     {
-        FileContent = TEXT("[") + JsonString + TEXT("]");
+        UE_LOG(LogTemp, Error, TEXT("Failed to open file for append: %s"), *FilePath);
+        return;
+    }
+
+    if (!bFileExists)
+    {
+        // First time writing: start a fresh JSON array
+        FString Start = TEXT("[") + TEXT("\n") + JsonString + TEXT("\n") + TEXT("]");
+        FTCHARToUTF8 Converter(*Start);
+        FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
     else
     {
-        FileContent.RemoveFromEnd(TEXT("]"));
-        FileContent += TEXT(",") + JsonString + TEXT("]");
+		// Not first time writing: append new array to the end of the file, just before the "]"
+		FileAr->Seek(FileAr->TotalSize() - 2);
+        FString Append = TEXT(",") + TEXT("\n") + JsonString;
+		FTCHARToUTF8 Converter(*Append);
+        FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
 
-    FFileHelper::SaveStringToFile(FileContent, *FilePath);
+    FileAr->Close();
 }
 
 void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject)
