@@ -114,7 +114,7 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
     if (!bFileExists)
     {
         // First time writing: start a fresh JSON array
-        FString Start = TEXT("[") + TEXT("\n") + JsonString + TEXT("\n") + TEXT("]");
+        FString Start = TEXT("[\n") + JsonString + TEXT("\n]");
         FTCHARToUTF8 Converter(*Start);
         FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
@@ -122,7 +122,7 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
     {
 		// Not first time writing: append new array to the end of the file, just before the "]"
 		FileAr->Seek(FileAr->TotalSize() - 2);
-        FString Append = TEXT(",") + TEXT("\n") + JsonString;
+        FString Append = TEXT(",\n") + JsonString;
 		FTCHARToUTF8 Converter(*Append);
         FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
