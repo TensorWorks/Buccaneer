@@ -78,7 +78,7 @@ void FBuccaneerStatsModule::Tick(float DeltaTime)
     }
     if ((NowTime - InterimStart) >= UBuccaneerSettings::CVarReportingInterval.GetValueOnAnyThread())
     {
-        PushStatsHTTP();
+        PushStats();
         InterimStart = NowTime;
         InterimHangCount = 0;
         InterimFrameCount = 1;
@@ -113,7 +113,7 @@ void FBuccaneerStatsModule::ComputeUsedMemory()
 #endif    
 }
 
-void FBuccaneerStatsModule::PushStatsHTTP()
+void FBuccaneerStatsModule::PushStats()
 {
     // Collected Metrics
     //              name           value

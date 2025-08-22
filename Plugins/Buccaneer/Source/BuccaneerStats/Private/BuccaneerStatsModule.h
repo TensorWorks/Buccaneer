@@ -23,7 +23,7 @@ public:
     TStatId GetStatId() const override;
 
 private:
-    void PushStatsHTTP();
+    void PushStats();
     void ComputeUsedMemory();
     void UpdateMetric(FString Name, double Value);
 
