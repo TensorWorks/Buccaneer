@@ -109,7 +109,8 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
         return;
     }
 
-    if (!bFileExists)
+    // If TotalSize is 0, the file was just created or was empty. 
+    if (FileAr->TotalSize() == 0)  
     {
         // First time writing: start a fresh JSON array
         FString Start = TEXT("[\n") + JsonString + TEXT("\n]");
@@ -118,7 +119,15 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
     }
     else
     {
-		// Not first time writing: append new array to the end of the file, just before the "]"
+        // Not first time writing: append new array to the end of the file, just before the "]"
+        const int64 CurrentSize = FileAr->TotalSize();  
+        if (CurrentSize < 2)
+        {  
+            UE_LOG(LogBuccaneerCommon, Error, TEXT("Cannot append to JSON file '%s': file is too small to be a valid array."), *FilePath);  
+            return;
+        } 
+
+        // Seek before the last two characters, assuming they are '\n]'.  
 		FileAr->Seek(FileAr->TotalSize() - 2);
         FString Append = TEXT(",\n") + JsonString + TEXT("\n]");
 		FTCHARToUTF8 Converter(*Append);
