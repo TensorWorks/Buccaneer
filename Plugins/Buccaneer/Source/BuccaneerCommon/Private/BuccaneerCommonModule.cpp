@@ -8,8 +8,6 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Logging.h"
 
-#include "HAL/PlatformFilemanager.h"
-#include "Misc/FileHelper.h"
 #include "HAL/FileManager.h"
 
 void FBuccaneerCommonModule::StartupModule()
