@@ -8,6 +8,8 @@
 #include "Interfaces/IHttpResponse.h"
 #include "Logging.h"
 
+#include "HAL/FileManager.h"
+
 void FBuccaneerCommonModule::StartupModule()
 {
     if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread().IsEmpty() && !UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
@@ -82,7 +84,9 @@ void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
 void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject)
 {
     FString FilePath = FPaths::Combine(UBuccaneerSettings::CVarJSONOutputDirectory.GetValueOnAnyThread(), FileName);
-
+	
+//  This is how we turn the JSON object into a string
+	
     FString JsonString;
     TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
     if (!ensure(FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter)))
@@ -90,21 +94,41 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
         UE_LOGFMT(LogBuccaneerCommon, Warning, "Cannot serialize json object");
         return;
     }
+	
+	IFileManager& FileManager = IFileManager::Get();
 
-    FString FileContent;
-    FFileHelper::LoadFileToString(FileContent, *FilePath);
+    // Check if file exists
+    bool bFileExists = FileManager.FileExists(*FilePath);
 
-    if (FileContent.IsEmpty())
+    // Open for read/write (no "truncate")
+    TUniquePtr<FArchive> FileAr(FileManager.CreateFileWriter(*FilePath, FILEWRITE_Append ));
+
+    if (!FileAr)
     {
-        FileContent = TEXT("[") + JsonString + TEXT("]");
+        UE_LOG(LogTemp, Error, TEXT("Failed to open file for append: %s"), *FilePath);
+        return;
+    }
+
+     // If file is empty or just an empty array like "[]", start a new array.
+    if (FileAr->TotalSize() <= 2)  
+    {
+        // First time writing OR writing to a corrupted file.
+        FileAr->Seek(0);
+        FString Start = TEXT("[\n") + JsonString + TEXT("\n]");
+        FTCHARToUTF8 Converter(*Start);
+        FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
     else
     {
-        FileContent.RemoveFromEnd(TEXT("]"));
-        FileContent += TEXT(",") + JsonString + TEXT("]");
+        // Not first time writing: Insert new JSON at correct position. 
+        // Seek before the last two characters, assuming they are '\n]'.  
+		FileAr->Seek(FileAr->TotalSize() - 2);
+        FString Content = TEXT(",\n") + JsonString + TEXT("\n]");
+		FTCHARToUTF8 Converter(*Content);
+        FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
     }
 
-    FFileHelper::SaveStringToFile(FileContent, *FilePath);
+    FileAr->Close();
 }
 
 void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject)
