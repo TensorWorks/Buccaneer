@@ -7,7 +7,6 @@
 #include "Interfaces/IHttpRequest.h"
 #include "Interfaces/IHttpResponse.h"
 #include "Logging.h"
-
 #include "HAL/FileManager.h"
 
 void FBuccaneerCommonModule::StartupModule()

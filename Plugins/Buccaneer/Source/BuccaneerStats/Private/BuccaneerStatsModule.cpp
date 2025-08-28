@@ -15,16 +15,38 @@
 #define COMPUTE_MEAN(CurrentMean, NewTime, FrameCount) \
     ((FrameCount - 1) * CurrentMean + NewTime) / FrameCount;
 
+TMap<FString, FString> StatDescriptionMap = {
+    {"mean_fps", "The average fps"},
+    {"mean_frametime", "The average frametime"},
+    {"mean_gamethreadtime", "The average game thread time"},
+    {"mean_gputime", "The average gpu time"},
+    {"mean_rendertime", "The average render thread time"},
+    {"mean_rhithreadtime", "The average rhi thread time"},
+    {"memory_virtual", "The virtual memory usage"},
+    {"memory_physical", "The physical memory usage"},
+    {"memory_gpu", "The gpu memory usage"},
+    {"num_hangs", "The number of frames hung in the recording interval"}};
+
 void FBuccaneerStatsModule::StartupModule()
 {
+    MetricJson = MakeShareable(new FJsonObject());
     JsonObject = MakeShareable(new FJsonObject());
-
+    JsonObject->SetField(TEXT("metrics"), MakeShared<FJsonValueObject>(MetricJson));
     AppStartTime = LastTickTime = InterimStart = FPlatformTime::Seconds();
 }
 
 void FBuccaneerStatsModule::UpdateMetric(FString Name, double Value)
 {
-    JsonObject->SetField(*Name, MakeShared<FJsonValueNumber>(Value));
+    if (!StatDescriptionMap.Contains(Name))
+    {
+        UE_LOGFMT(LogBuccaneerStats, Log, "No description for metric {0}", Name);
+        return;
+    }
+
+    TSharedPtr<FJsonObject> MetricInfoJson = MakeShareable(new FJsonObject());
+    MetricInfoJson->SetField("description", MakeShared<FJsonValueString>((TEXT("%s"), *StatDescriptionMap[Name])));
+    MetricInfoJson->SetField("value", MakeShared<FJsonValueNumber>(Value));
+    MetricJson->SetField(*Name, MakeShared<FJsonValueObject>(MetricInfoJson));
 }
 
 void FBuccaneerStatsModule::ShutdownModule()
@@ -110,7 +132,7 @@ void FBuccaneerStatsModule::ComputeUsedMemory()
         }
     }
     UsedGPUMemory = (double)(TotalMemory / 1024.f / 1024.f);
-#endif    
+#endif
 }
 
 void FBuccaneerStatsModule::PushStats()
@@ -128,7 +150,7 @@ void FBuccaneerStatsModule::PushStats()
     UpdateMetric("memory_gpu", UsedGPUMemory);
     UpdateMetric("num_hangs", InterimHangCount);
 
-	const double ElapsedSeconds = FPlatformTime::Seconds() - AppStartTime;
+    const double ElapsedSeconds = FPlatformTime::Seconds() - AppStartTime;
     const double ElapsedMilliseconds = ElapsedSeconds * 1000;
     const int64 RoundedMilliseconds = FMath::RoundToInt64(ElapsedMilliseconds);
     JsonObject->SetField(TEXT("timestamp"), MakeShared<FJsonValueNumber>(RoundedMilliseconds));
