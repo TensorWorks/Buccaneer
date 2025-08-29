@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Dom/JsonObject.h"
+#include "BuccaneerMetrics.h"
 #include "IBuccaneerCommonModule.h"
 #include "IBuccaneer4PixelStreaming2Module.h"
 #include "Modules/ModuleManager.h"
@@ -21,5 +21,5 @@ public:
 private:
 	double LoggingStart;
 
-    TSharedPtr<FJsonObject> JsonObject;
+    TMap<FString, TArray<FBuccaneerMetric>> PlayerMetricsMap;
 };

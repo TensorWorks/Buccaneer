@@ -1,7 +1,7 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
 #include "BuccaneerCommonModule.h"
-
+#include "BuccaneerMetrics.h"
 #include "BuccaneerSettings.h"
 #include "HttpModule.h"
 #include "Interfaces/IHttpRequest.h"
@@ -26,10 +26,10 @@ void FBuccaneerCommonModule::StartupModule()
         UBuccaneerSettings::CVarID->Set(*InstanceIDOverride, ECVF_SetByCommandline);
     }
 
-    if (UBuccaneerSettings::FDelegates* Delegates = UBuccaneerSettings::Delegates())
-	{
-		Delegates->OnMetadataChanged.AddRaw(this, &FBuccaneerCommonModule::FormatMetadata);
-	}
+    if (UBuccaneerSettings::FDelegates *Delegates = UBuccaneerSettings::Delegates())
+    {
+        Delegates->OnMetadataChanged.AddRaw(this, &FBuccaneerCommonModule::FormatMetadata);
+    }
 
     FormatMetadata(nullptr);
 
@@ -41,7 +41,7 @@ void FBuccaneerCommonModule::ShutdownModule()
 {
 }
 
-FBuccaneerCommonModule::FReadyEvent& FBuccaneerCommonModule::OnReady()
+FBuccaneerCommonModule::FReadyEvent &FBuccaneerCommonModule::OnReady()
 {
     return ReadyEvent;
 }
@@ -51,41 +51,48 @@ bool FBuccaneerCommonModule::IsReady()
     return bModuleReady;
 }
 
-void FBuccaneerCommonModule::SendStats(TSharedPtr<FJsonObject> JsonObject)
+void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection &StatsCollection)
 {
-    JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *UBuccaneerSettings::CVarID.GetValueOnAnyThread())));
-    JsonObject->SetField("metadata", MakeShared<FJsonValueObject>(MetadataJson));
+    const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
 
     if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
     {
-        SendJSON(TEXT("stats.json"), JsonObject);
+        // Case: Sending stats to disk (we want to use our un-nested JSON format)
+        TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJsonUnnested();
+        TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
+        JsonObject->SetField("id", JsonBuccaneerID);
+        WriteJSON(TEXT("stats.json"), JsonObject);
     }
-    else
+	else if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread() != "")
     {
+        // Case: Sending stats to Buccaneer server (we want to use the nested JSON format)
+        TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJsonNested();
+        TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
+        JsonObject->SetField("id", JsonBuccaneerID);
+        JsonObject->SetField("metadata", MakeShared<FJsonValueObject>(MetadataJson));
         SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/stats"), JsonObject);
     }
 }
 
 void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
 {
-    JsonObject->SetField("id", MakeShared<FJsonValueString>((TEXT("%s"), *UBuccaneerSettings::CVarID.GetValueOnAnyThread())));
+    const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
+    TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
+    JsonObject->SetField("id", JsonBuccaneerID);
 
-    if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
-    {
-        SendJSON(TEXT("events.json"), JsonObject);
-    }
-    else
+    // Only send events to server if we are not in JSON writing mode
+    if (!UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
     {
         SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/event"), JsonObject);
     }
 }
 
-void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject)
+void FBuccaneerCommonModule::WriteJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject)
 {
     FString FilePath = FPaths::Combine(UBuccaneerSettings::CVarJSONOutputDirectory.GetValueOnAnyThread(), FileName);
-	
-//  This is how we turn the JSON object into a string
-	
+
+    //  This is how we turn the JSON object into a string
+
     FString JsonString;
     TSharedRef<TJsonWriter<>> JsonWriter = TJsonWriterFactory<>::Create(&JsonString);
     if (!ensure(FJsonSerializer::Serialize(JsonObject.ToSharedRef(), JsonWriter)))
@@ -93,14 +100,14 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
         UE_LOGFMT(LogBuccaneerCommon, Warning, "Cannot serialize json object");
         return;
     }
-	
-	IFileManager& FileManager = IFileManager::Get();
+
+    IFileManager &FileManager = IFileManager::Get();
 
     // Check if file exists
     bool bFileExists = FileManager.FileExists(*FilePath);
 
     // Open for read/write (no "truncate")
-    TUniquePtr<FArchive> FileAr(FileManager.CreateFileWriter(*FilePath, FILEWRITE_Append ));
+    TUniquePtr<FArchive> FileAr(FileManager.CreateFileWriter(*FilePath, FILEWRITE_Append));
 
     if (!FileAr)
     {
@@ -108,23 +115,23 @@ void FBuccaneerCommonModule::SendJSON(FString FileName, TSharedPtr<FJsonObject> 
         return;
     }
 
-     // If file is empty or just an empty array like "[]", start a new array.
-    if (FileAr->TotalSize() <= 2)  
+    // If file is empty or just an empty array like "[]", start a new array.
+    if (FileAr->TotalSize() <= 2)
     {
         // First time writing OR writing to a corrupted file.
         FileAr->Seek(0);
         FString Start = TEXT("[\n") + JsonString + TEXT("\n]");
         FTCHARToUTF8 Converter(*Start);
-        FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
+        FileAr->Serialize((UTF8CHAR *)Converter.Get(), Converter.Length());
     }
     else
     {
-        // Not first time writing: Insert new JSON at correct position. 
-        // Seek before the last two characters, assuming they are '\n]'.  
-		FileAr->Seek(FileAr->TotalSize() - 2);
+        // Not first time writing: Insert new JSON at correct position.
+        // Seek before the last two characters, assuming they are '\n]'.
+        FileAr->Seek(FileAr->TotalSize() - 2);
         FString Content = TEXT(",\n") + JsonString + TEXT("\n]");
-		FTCHARToUTF8 Converter(*Content);
-        FileAr->Serialize((UTF8CHAR*)Converter.Get(), Converter.Length());
+        FTCHARToUTF8 Converter(*Content);
+        FileAr->Serialize((UTF8CHAR *)Converter.Get(), Converter.Length());
     }
 
     FileAr->Close();
@@ -146,7 +153,7 @@ void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonO
     HttpRequest->SetVerb(TEXT("POST"));
     HttpRequest->SetContentAsString(Body);
     HttpRequest->OnProcessRequestComplete().BindLambda([](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded)
-    {
+                                                       {
         FString ResponseStr, ErrorStr;
 
         if (bSucceeded && HttpResponse.IsValid())
@@ -165,23 +172,22 @@ void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonO
         if (!ErrorStr.IsEmpty())
         {
             UE_LOGFMT(LogBuccaneerCommon, Warning, "Push event response: {0}", *ErrorStr);
-        }
-    });
+        } });
 
     HttpRequest->ProcessRequest();
 }
 
-void FBuccaneerCommonModule::FormatMetadata(IConsoleVariable* Var)
+void FBuccaneerCommonModule::FormatMetadata(IConsoleVariable *Var)
 {
     // Additional Metadata
     TMap<FString, FString> MetadataMap = UBuccaneerSettings::GetMetadata();
-    for (const TPair<FString, FString>& Pair : MetadataMap)
+    for (const TPair<FString, FString> &Pair : MetadataMap)
     {
-        if(Pair.Key.IsEmpty() || Pair.Value.IsEmpty())
+        if (Pair.Key.IsEmpty() || Pair.Value.IsEmpty())
         {
             continue;
         }
-        
+
         MetadataJson->SetField(*Pair.Key, MakeShared<FJsonValueString>((TEXT("%s"), *Pair.Value)));
     }
 }

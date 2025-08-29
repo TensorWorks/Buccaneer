@@ -1,6 +1,5 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
-
 #include "Buccaneer4PixelStreaming.h"
 
 #include "Logging.h"
@@ -8,8 +7,8 @@
 #include "Buccaneer4PixelStreamingSettings.h"
 
 TMap<FString, FString> StatDescriptionMap = {
-    {"jitterBufferDelay", "jitterBufferDelay"},
-    {"framesSent", "framesSent"},
+	{"jitterBufferDelay", "jitterBufferDelay"},
+	{"framesSent", "framesSent"},
 	{"framesPerSecond", "framesPerSecond"},
 	{"framesReceived", "framesReceived"},
 	{"framesDropped", "framesDropped"},
@@ -38,7 +37,7 @@ TMap<FString, FString> StatDescriptionMap = {
 	{"qpSum", "qpSum"},
 	{"totalEncodeTime", "totalEncodeTime"},
 	{"totalPacketSendDelay", "totalPacketSendDelay"},
-    {"packetSendDelay", "packetSendDelay"},
+	{"packetSendDelay", "packetSendDelay"},
 	{"framesEncoded", "framesEncoded"},
 	{"transmitFps", "transmit fps"},
 	{"bitrate", "bitrate (kb/s)"},
@@ -46,17 +45,14 @@ TMap<FString, FString> StatDescriptionMap = {
 	{"encodeTime", "encode time (ms)"},
 	{"encodeFps", "encode fps"},
 	{"captureToSend", "capture to send (ms)"},
-	{"captureFps", "capture fps"}
-};
+	{"captureFps", "capture fps"}};
 
 void FBuccaneer4PixelStreamingModule::StartupModule()
 {
-    LoggingStart = FPlatformTime::Seconds();
+	LoggingStart = FPlatformTime::Seconds();
 	ReportingInterval = 1;
 
-    JsonObject =  MakeShareable(new FJsonObject());
-
-	if (UPixelStreamingDelegates* Delegates = UPixelStreamingDelegates::GetPixelStreamingDelegates())
+	if (UPixelStreamingDelegates *Delegates = UPixelStreamingDelegates::GetPixelStreamingDelegates())
 	{
 		Delegates->OnStatChangedNative.AddRaw(this, &FBuccaneer4PixelStreamingModule::ConsumeStat);
 	}
@@ -70,78 +66,60 @@ void FBuccaneer4PixelStreamingModule::ShutdownModule()
 
 void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId PlayerId, FName StatName, float StatValue)
 {
-    if (!UBuccaneer4PixelStreamingSettings::CVarEnabled.GetValueOnAnyThread() || PlayerId == TEXT("Application"))
+	if (!UBuccaneer4PixelStreamingSettings::CVarEnabled.GetValueOnAnyThread())
 	{
 		return;
 	}
-    /**
-    * "{StatName}": {
-    *      "description": "{StatDescription}",
-    *      "value": [
-    *          "{PlayerId}": {StatValue}
-    *      ]
-    * }
-    */
-    const TSharedPtr<FJsonObject> MetricJson;
-	const TSharedPtr<FJsonObject>* MetricJsonPtr = &MetricJson;
-	if(JsonObject->TryGetObjectField(*StatName.ToString(), MetricJsonPtr))
+
+	// We don't care about application level stats
+	if(PlayerId == TEXT("Application"))
 	{
-		TArray<TSharedPtr<FJsonValue>> ValueArray = MetricJson->GetArrayField(TEXT("value"));
+		return;
+	}
 
-        bool bRequiresCreation = true;
-        for (int i = 0; i < ValueArray.Num(); i++) 
-        {
-            const TSharedPtr<FJsonObject> ValueJson = ValueArray[i]->AsObject();
-			double val;
-			if(ValueJson->TryGetNumberField(*PlayerId, val))
-			{
-				// This metric already has this player id, update the value accordingly
-				ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
-				bRequiresCreation = false;
-				break;
-			}
-        }
-	
-		if(bRequiresCreation)
-		{
-			TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
-            ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
-
-            ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
-
-            MetricJson->SetArrayField((TEXT("value")), ValueArray);
-		}
+	FBuccaneerMetric NewMetric;
+	NewMetric.Name = StatName.ToString();
+	if (const FString* Description = StatDescriptionMap.Find(StatName.ToString()))
+	{
+		NewMetric.Description = *Description;
 	}
 	else
 	{
-        if(!StatDescriptionMap.Contains(*StatName.ToString()))
-        {
-            UE_LOGFMT(LogBuccaneer4PixelStreaming, Log, "{0}", StatName.ToString());
-            return;
-        }
-        TSharedPtr<FJsonObject> NewMetricJson = MakeShareable(new FJsonObject());
+		UE_LOGFMT(LogBuccaneer4PixelStreaming, Log, "Unknown stat {0}", StatName.ToString());
+		NewMetric.Description = StatName.ToString(); // Default description
+	}
+	NewMetric.Value = StatValue;
 
-        TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
-        ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
-
-        TArray<TSharedPtr<FJsonValue>> ValueArray;
-        ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
-		
-        NewMetricJson->SetArrayField((TEXT("value")), ValueArray);
-
-		JsonObject->SetObjectField(*StatName.ToString(), NewMetricJson);
+	// All metrics are now player-specific
+	TArray<FBuccaneerMetric>& PlayerStats = PlayerMetricsMap.FindOrAdd(PlayerId);
+	bool bFound = false;
+	for (FBuccaneerMetric& Metric : PlayerStats)
+	{
+		if (Metric.Name == NewMetric.Name)
+		{
+			Metric.Value = NewMetric.Value;
+			bFound = true;
+			break;
+		}
+	}
+	if (!bFound)
+	{
+		PlayerStats.Add(NewMetric);
 	}
 
-    double NowTime = FPlatformTime::Seconds();
-	if ( (NowTime - LoggingStart) >= ReportingInterval )
+	double NowTime = FPlatformTime::Seconds();
+	if ((NowTime - LoggingStart) >= ReportingInterval)
 	{
 		LoggingStart = NowTime;
-        TSharedPtr<FJsonObject> PayloadJson =  MakeShareable(new FJsonObject());
-        PayloadJson->SetObjectField(TEXT("metrics"), JsonObject);
-		IBuccaneerCommonModule::Get().SendStats(PayloadJson);
+		
+		FMetricsCollection Collection;
+		Collection.Timestamp = LoggingStart;
+		Collection.PlayerMetrics = PlayerMetricsMap; // Copy player metrics
 
-        JsonObject = MakeShareable(new FJsonObject());
+		IBuccaneerCommonModule::Get().SendMetrics(Collection);
+
+		PlayerMetricsMap.Empty();
 	}
 }
-	
+
 IMPLEMENT_MODULE(FBuccaneer4PixelStreamingModule, Buccaneer4PixelStreaming)

@@ -11,42 +11,14 @@
 #include "Stats/Stats.h"
 #include "Stats/StatsData.h"
 #include "Math/UnrealMathUtility.h"
+#include "BuccaneerMetrics.h"
 
 #define COMPUTE_MEAN(CurrentMean, NewTime, FrameCount) \
     ((FrameCount - 1) * CurrentMean + NewTime) / FrameCount;
 
-TMap<FString, FString> StatDescriptionMap = {
-    {"mean_fps", "The average fps"},
-    {"mean_frametime", "The average frametime"},
-    {"mean_gamethreadtime", "The average game thread time"},
-    {"mean_gputime", "The average gpu time"},
-    {"mean_rendertime", "The average render thread time"},
-    {"mean_rhithreadtime", "The average rhi thread time"},
-    {"memory_virtual", "The virtual memory usage"},
-    {"memory_physical", "The physical memory usage"},
-    {"memory_gpu", "The gpu memory usage"},
-    {"num_hangs", "The number of frames hung in the recording interval"}};
-
 void FBuccaneerStatsModule::StartupModule()
 {
-    MetricJson = MakeShareable(new FJsonObject());
-    JsonObject = MakeShareable(new FJsonObject());
-    JsonObject->SetField(TEXT("metrics"), MakeShared<FJsonValueObject>(MetricJson));
     AppStartTime = LastTickTime = InterimStart = FPlatformTime::Seconds();
-}
-
-void FBuccaneerStatsModule::UpdateMetric(FString Name, double Value)
-{
-    if (!StatDescriptionMap.Contains(Name))
-    {
-        UE_LOGFMT(LogBuccaneerStats, Log, "No description for metric {0}", Name);
-        return;
-    }
-
-    TSharedPtr<FJsonObject> MetricInfoJson = MakeShareable(new FJsonObject());
-    MetricInfoJson->SetField("description", MakeShared<FJsonValueString>((TEXT("%s"), *StatDescriptionMap[Name])));
-    MetricInfoJson->SetField("value", MakeShared<FJsonValueNumber>(Value));
-    MetricJson->SetField(*Name, MakeShared<FJsonValueObject>(MetricInfoJson));
 }
 
 void FBuccaneerStatsModule::ShutdownModule()
@@ -117,14 +89,14 @@ void FBuccaneerStatsModule::ComputeUsedMemory()
     UsedPhysicalMemory = static_cast<double>(MemoryStats.UsedPhysical) / BytesPerMB;
 
 #if !UE_BUILD_SHIPPING
-    TArray<FStatMessage> Stats;
-    GetPermanentStats(Stats);
+    TArray<FStatMessage> Metrics;
+    GetPermanentStats(Metrics);
 
     FName NAME_STATGROUP_RHI(FStatGroup_STATGROUP_RHI::GetGroupName());
     int64 TotalMemory = 0;
-    for (int32 Index = 0; Index < Stats.Num(); Index++)
+    for (int32 Index = 0; Index < Metrics.Num(); Index++)
     {
-        FStatMessage const &Meta = Stats[Index];
+        FStatMessage const &Meta = Metrics[Index];
         FName LastGroup = Meta.NameAndInfo.GetGroupName();
         if (LastGroup == NAME_STATGROUP_RHI && Meta.NameAndInfo.GetFlag(EStatMetaFlags::IsMemory))
         {
@@ -137,25 +109,19 @@ void FBuccaneerStatsModule::ComputeUsedMemory()
 
 void FBuccaneerStatsModule::PushStats()
 {
-    // Collected Metrics
-    //              name           value
-    UpdateMetric("mean_fps", InterimMeanFrameTime != 0.0 ? (float)(1000.0 / InterimMeanFrameTime) : 0.0f);
-    UpdateMetric("mean_frametime", InterimMeanFrameTime);
-    UpdateMetric("mean_gamethreadtime", InterimMeanGameThreadTime);
-    UpdateMetric("mean_gputime", InterimMeanGPUTime);
-    UpdateMetric("mean_rendertime", InterimMeanRenderThreadTime);
-    UpdateMetric("mean_rhithreadtime", InterimMeanRHIThreadTime);
-    UpdateMetric("memory_virtual", UsedVirtualMemory);
-    UpdateMetric("memory_physical", UsedPhysicalMemory);
-    UpdateMetric("memory_gpu", UsedGPUMemory);
-    UpdateMetric("num_hangs", InterimHangCount);
-
-    const double ElapsedSeconds = FPlatformTime::Seconds() - AppStartTime;
-    const double ElapsedMilliseconds = ElapsedSeconds * 1000;
-    const int64 RoundedMilliseconds = FMath::RoundToInt64(ElapsedMilliseconds);
-    JsonObject->SetField(TEXT("timestamp"), MakeShared<FJsonValueNumber>(RoundedMilliseconds));
-
-    IBuccaneerCommonModule::Get().SendStats(JsonObject);
+    FMetricsCollection MetricsCollection;
+    MetricsCollection.Timestamp = FMath::RoundToInt64((FPlatformTime::Seconds() - AppStartTime) * 1000);
+    MetricsCollection.Metrics.Add({"mean_fps", "The average fps", InterimMeanFrameTime != 0.0 ? (float)(1000.0 / InterimMeanFrameTime) : 0.0f});
+    MetricsCollection.Metrics.Add({"mean_frametime", "The average frametime", InterimMeanFrameTime});
+    MetricsCollection.Metrics.Add({"mean_gamethreadtime", "The average game thread time", InterimMeanGameThreadTime});
+    MetricsCollection.Metrics.Add({"mean_gputime", "The average gpu time", InterimMeanGPUTime});
+    MetricsCollection.Metrics.Add({"mean_rendertime", "The average render thread time", InterimMeanRenderThreadTime});
+    MetricsCollection.Metrics.Add({"mean_rhithreadtime", "The average rhi thread time", InterimMeanRHIThreadTime});
+    MetricsCollection.Metrics.Add({"memory_virtual", "The virtual memory usage", UsedVirtualMemory});
+    MetricsCollection.Metrics.Add({"memory_physical", "The physical memory usage", UsedPhysicalMemory});
+    MetricsCollection.Metrics.Add({"memory_gpu", "The gpu memory usage", UsedGPUMemory});
+    MetricsCollection.Metrics.Add({"num_hangs", "The number of frames hung in the recording interval", (double)InterimHangCount});
+    IBuccaneerCommonModule::Get().SendMetrics(MetricsCollection);
 }
 
 TStatId FBuccaneerStatsModule::GetStatId() const

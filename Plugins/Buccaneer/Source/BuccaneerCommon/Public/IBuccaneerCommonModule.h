@@ -6,6 +6,7 @@
 #include "Dom/JsonObject.h"
 #include "Modules/ModuleInterface.h"
 #include "Modules/ModuleManager.h"
+#include "BuccaneerMetrics.h"
 
 class BUCCANEERCOMMON_API IBuccaneerCommonModule : public IModuleInterface
 {
@@ -21,7 +22,7 @@ public:
 		return FModuleManager::LoadModuleChecked<IBuccaneerCommonModule>("BuccaneerCommon");
 	}
 
-    /**
+	/**
 	 * Checks to see if this module is loaded.
 	 *
 	 * @return True if the module is loaded.
@@ -31,7 +32,7 @@ public:
 		return FModuleManager::Get().IsModuleLoaded("BuccaneerCommon");
 	}
 
-    /**
+	/**
 	 * Event fired when internal streamer is initialized and the methods on this module are ready for use.
 	 */
 	DECLARE_EVENT_OneParam(IBuccaneerCommonModule, FReadyEvent, IBuccaneerCommonModule&);
@@ -42,20 +43,19 @@ public:
 	 */
 	virtual FReadyEvent& OnReady() = 0;
 
-    /**
+	/**
 	 * Is the BuccaneerCommon module actually ready to use? Is the streamer created.
 	 * @return True if BuccaneerCommon module methods are ready for use.
 	 */
 	virtual bool IsReady() = 0;
 
-    /**
-     * 
-     */
-    virtual void SendStats(TSharedPtr<FJsonObject> JsonObject) = 0;
-    
-    /**
-     * 
-     */
-    virtual void SendEvent(TSharedPtr<FJsonObject> JsonObject) = 0;
+	/**
+	 *
+	 */
+	virtual void SendMetrics(const FMetricsCollection& StatsCollection) = 0;
 
+	/**
+	 *
+	 */
+	virtual void SendEvent(TSharedPtr<FJsonObject> JsonObject) = 0;
 };

@@ -4,7 +4,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Dom/JsonObject.h"
+#include "BuccaneerMetrics.h"
 #include "IBuccaneerCommonModule.h"
 #include "IBuccaneer4PixelStreamingModule.h"
 #include "IPixelStreamingModule.h"
@@ -25,5 +25,5 @@ private:
 	double LoggingStart;
 	double ReportingInterval;
 
-    TSharedPtr<FJsonObject> JsonObject;
+    TMap<FPixelStreamingPlayerId, TMap<FString, FBuccaneerMetric>> PlayerMetrics;
 };

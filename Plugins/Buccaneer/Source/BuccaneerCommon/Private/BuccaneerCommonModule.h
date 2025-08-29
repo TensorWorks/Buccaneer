@@ -4,6 +4,8 @@
 
 #include "IBuccaneerCommonModule.h"
 
+struct FMetricsCollection;
+
 class FBuccaneerCommonModule : public IBuccaneerCommonModule
 {
 public:
@@ -13,16 +15,16 @@ public:
 
     virtual FReadyEvent& OnReady() override;
     virtual bool IsReady() override;
-    virtual void SendStats(TSharedPtr<FJsonObject> JsonObject) override;
+    virtual void SendMetrics(const FMetricsCollection& StatsCollection) override;
     virtual void SendEvent(TSharedPtr<FJsonObject> JsonObject) override;
 
 private:
-	bool		bModuleReady = false;
-	FReadyEvent ReadyEvent;
+    bool bModuleReady = false;
+    FReadyEvent ReadyEvent;
 
 private:
     void SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonObject);
-    void SendJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject);
+    void WriteJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject);
     void FormatMetadata(IConsoleVariable* Var);
 
     TSharedPtr<FJsonObject> MetadataJson = MakeShareable(new FJsonObject());

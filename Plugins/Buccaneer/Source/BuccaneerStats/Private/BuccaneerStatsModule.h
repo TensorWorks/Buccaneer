@@ -25,7 +25,6 @@ public:
 private:
     void PushStats();
     void ComputeUsedMemory();
-    void UpdateMetric(FString Name, double Value);
 
     // Time keeping variables
     double LastTickTime = 0.0;
@@ -45,8 +44,5 @@ private:
     double InterimHangCount = 0.0;
     uint32 InterimFrameCount = 1;
 
-    // Variable for storing logging URL and logging object
-    TSharedPtr<FJsonObject> JsonObject;
-    TSharedPtr<FJsonObject> MetricJson;
     double AppStartTime = 0.0;
 };
