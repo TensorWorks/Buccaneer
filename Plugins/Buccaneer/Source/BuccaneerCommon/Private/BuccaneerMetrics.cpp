@@ -28,6 +28,7 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJsonNested() const
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedPtr<FJsonObject> MetricsJson = MakeShareable(new FJsonObject());
 
+	// Build JSON object using the global metrics we have stored in the FMetricsCollection
 	for (const FBuccaneerMetric &Stat : Metrics)
 	{
 		TSharedPtr<FJsonObject> StatJson = MakeShareable(new FJsonObject());
@@ -44,6 +45,18 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJsonNested() const
     *          "{PlayerId}": {StatValue}
     *      ]
     * }
+	* Example:
+	* "fps": {
+    *      "description": "The framerate of the game",
+    *      "value": [
+    *			{
+	*				"player0": 60
+	*			},
+	*			{
+	*				"player1": 57
+	*			},
+    *      ]
+    * }
     */
 
 	// Basically just need to do this logic from original Buc:
@@ -55,7 +68,7 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJsonNested() const
 	// ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
 	// NewMetricJson->SetArrayField((TEXT("value")), ValueArray);
 
-	// Add PlayerMetrics directly under MetricsJson
+	// Build JSON using each of the player metrics that we have stored in the FMetricsCollection
 	for (auto const& PlayerEntry : PlayerMetrics)
 	{
 		FString PlayerId = PlayerEntry.Key;
