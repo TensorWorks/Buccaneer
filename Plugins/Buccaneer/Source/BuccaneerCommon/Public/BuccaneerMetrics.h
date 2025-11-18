@@ -33,10 +33,4 @@ struct FMetricsCollection
 	 * @return A TSharedPtr to the created FJsonObject.
 	 */
 	TSharedPtr<FJsonObject> ToJsonNested() const;
-
-	/**
-	 * @brief Converts the FMetricsCollection to an unnested FJsonObject without descriptions. 
-	 * @return A TSharedPtr to the created FJsonObject.
-	 */
-	TSharedPtr<FJsonObject> ToJsonUnnested() const;
 };

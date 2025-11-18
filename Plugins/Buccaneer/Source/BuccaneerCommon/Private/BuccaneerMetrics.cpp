@@ -2,28 +2,6 @@
 
 TSharedPtr<FJsonObject> FMetricsCollection::ToJsonNested() const
 {
-	// This function makes a JSON object that follows this structure:
-	/*
-	*
-	* {
-	*   "metrics": 
-	*	{
-	*		"fps": 
-	*		{
-	*			"description": "The framerate of the game"
-	*			"value": 60
-	*		}
-	*		"player0":
-	*		{
-	*			"bitrate":
-	*			{
-	*				"description": "This peer's streaming bitrate"
-	*				"value": 1000
-	*			}
-	*		} 
-	*	}
-	* }
-	*/
 
 	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
 	TSharedPtr<FJsonObject> MetricsJson = MakeShareable(new FJsonObject());
@@ -37,7 +15,7 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJsonNested() const
 		MetricsJson->SetObjectField(Stat.Name, StatJson);
 	}
 
-	// This is what it wants for Pixel Streaming:
+	// This is the format that Buc wants from Pixel Streaming 1/2:
 	/**
     * "{StatName}": {
     *      "description": "{StatDescription}",
@@ -59,62 +37,78 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJsonNested() const
     * }
     */
 
-	// Basically just need to do this logic from original Buc:
-
-	// From: Private/Buccaneer4PixelStreaming.cpp
-	// TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
-	// ValueJson->SetField(*PlayerId, MakeShared<FJsonValueNumber>(StatValue));
-	// TArray<TSharedPtr<FJsonValue>> ValueArray;
-	// ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
-	// NewMetricJson->SetArrayField((TEXT("value")), ValueArray);
-
 	// Build JSON using each of the player metrics that we have stored in the FMetricsCollection
 	for (auto const& PlayerEntry : PlayerMetrics)
 	{
 		FString PlayerId = PlayerEntry.Key;
 		const TArray<FBuccaneerMetric>& PlayerStats = PlayerEntry.Value;
 
-		TSharedPtr<FJsonObject> SinglePlayerMetricsJson = MakeShareable(new FJsonObject());
+		TMap<FString, TSharedPtr<FJsonObject>> PlayerStatsJsonMap = TMap<FString, TSharedPtr<FJsonObject>>();
+
+		// Iterate each stat within the individual player's stats
+		// and extract the value for each and store it on MetricsJson
 		for (const FBuccaneerMetric &Stat : PlayerStats)
 		{
-			TSharedPtr<FJsonObject> StatJson = MakeShareable(new FJsonObject());
-			StatJson->SetStringField(TEXT("description"), Stat.Description);
-			// todo: This needs to be changed from being set to a "number" to instead be set using `SetArrayField` as above
-			StatJson->SetNumberField(TEXT("value"), Stat.Value);
-			SinglePlayerMetricsJson->SetObjectField(Stat.Name, StatJson);
+			const FString& OriginalStatName = Stat.Name;
+			// Replace any hyphens from the stat name with underscores to ensure valid prometheus metric names
+			FString StatName = OriginalStatName;
+			StatName.ReplaceInline(TEXT("-"), TEXT("_"));
+
+			if(!PlayerStatsJsonMap.Contains(StatName))
+			{
+				// Make JSON for the `description` field
+				TSharedPtr<FJsonObject> StatJson = MakeShareable(new FJsonObject());
+		 		StatJson->SetStringField(TEXT("description"), Stat.Description);
+				// Make JSON for the `value` field (which is a JSON array)
+				TArray<TSharedPtr<FJsonValue>> ValueArray;
+
+				// Note each value is stored in the JSON array as { "playerId": value }
+				TSharedPtr<FJsonObject> PlayerStatJson = MakeShareable(new FJsonObject());
+				PlayerStatJson->SetNumberField(PlayerId, Stat.Value);
+				ValueArray.Add(MakeShareable(new FJsonValueObject(PlayerStatJson)));
+
+				// Set the `value` array on the StatJson
+				StatJson->SetArrayField(TEXT("value"), ValueArray);
+
+				// Put the whole StatJson object we just made into the map
+				// so we can add to it as we iterate through the other players
+				PlayerStatsJsonMap.Add(StatName, StatJson);
+			}
+			else
+			{
+				// We have already created the StatJson for this stat name
+				// so just need to add to the `value` array
+				TSharedPtr<FJsonObject> StatJson = PlayerStatsJsonMap[StatName];
+				const TArray<TSharedPtr<FJsonValue>>* ValueArrayPtr;
+				if(StatJson->TryGetArrayField(TEXT("value"), ValueArrayPtr))
+				{
+					// Copy the existing array so we can modify it
+					TArray<TSharedPtr<FJsonValue>> ValueArray = *ValueArrayPtr;
+
+					// Create a new JSON object for this player's value
+					TSharedPtr<FJsonObject> ValueJson = MakeShareable(new FJsonObject());
+					ValueJson->SetNumberField(PlayerId, Stat.Value);
+
+					// Add it to the array
+					ValueArray.Add(MakeShareable(new FJsonValueObject(ValueJson)));
+
+					// Set the modified array back
+					StatJson->SetArrayField(TEXT("value"), ValueArray);
+				}
+			}
 		}
-		MetricsJson->SetObjectField(PlayerId, SinglePlayerMetricsJson);
+
+		// Iterate the `PlayerStatsJsonMap` and add each stat to the main MetricsJson
+		for(auto const& StatEntry : PlayerStatsJsonMap)
+		{
+			FString StatName = StatEntry.Key;
+			TSharedPtr<FJsonObject> StatJson = StatEntry.Value;
+			MetricsJson->SetObjectField(StatName, StatJson);
+		}
 	}
 
 	JsonObject->SetObjectField(TEXT("metrics"), MetricsJson);
 	JsonObject->SetNumberField(TEXT("timestamp"), Timestamp);
-
-	return JsonObject;
-}
-
-TSharedPtr<FJsonObject> FMetricsCollection::ToJsonUnnested() const
-{
-	TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
-
-	for (const FBuccaneerMetric &Stat : Metrics)
-	{
-		JsonObject->SetField(Stat.Name, MakeShared<FJsonValueNumber>(Stat.Value));
-	}
-
-	// Add PlayerMetrics (unnested, so composite name)
-	for (auto const& PlayerEntry : PlayerMetrics)
-	{
-		FString PlayerId = PlayerEntry.Key;
-		const TArray<FBuccaneerMetric>& PlayerStats = PlayerEntry.Value;
-
-		for (const FBuccaneerMetric &Stat : PlayerStats)
-		{
-			FString CompositeName = FString::Printf(TEXT("%s_%s"), *PlayerId, *Stat.Name);
-			JsonObject->SetField(CompositeName, MakeShared<FJsonValueNumber>(Stat.Value));
-		}
-	}
-
-	JsonObject->SetField(TEXT("timestamp"), MakeShared<FJsonValueNumber>(Timestamp));
 
 	return JsonObject;
 }

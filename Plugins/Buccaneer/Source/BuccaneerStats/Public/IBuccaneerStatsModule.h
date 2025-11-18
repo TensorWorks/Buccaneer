@@ -30,4 +30,13 @@ public:
 	{
 		return FModuleManager::Get().IsModuleLoaded("BuccaneerStats");
 	}
+
+	/*
+	* Get the timestamp for the purposes of stats reporting (so we all use the same clock/timekeeping system)
+	*/
+	static int64 GetStatsTimestamp()
+	{
+		// Return platform timestamp in milliseconds
+		return FMath::RoundToInt64((FPlatformTime::Seconds()) * 1000);
+	}
 };

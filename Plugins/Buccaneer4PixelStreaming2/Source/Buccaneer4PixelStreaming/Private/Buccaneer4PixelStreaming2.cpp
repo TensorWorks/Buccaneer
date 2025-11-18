@@ -1,7 +1,7 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
 #include "Buccaneer4PixelStreaming2.h"
-
+#include "IBuccaneerStatsModule.h"
 #include "Logging.h"
 #include "Buccaneer4PixelStreaming2Settings.h"
 
@@ -105,7 +105,7 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
 		PlayerStats.Add(NewMetric);
 	}
 
-	double NowTime = FPlatformTime::Seconds();
+	double NowTime = IBuccaneerStatsModule::GetStatsTimestamp();
 	if ((NowTime - LoggingStart) >= UBuccaneer4PixelStreaming2Settings::CVarReportingInterval.GetValueOnAnyThread())
 	{
 		LoggingStart = NowTime;

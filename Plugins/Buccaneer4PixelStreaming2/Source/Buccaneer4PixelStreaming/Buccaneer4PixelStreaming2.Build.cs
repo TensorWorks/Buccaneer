@@ -27,7 +27,8 @@ public class Buccaneer4PixelStreaming2 : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"BuccaneerCommon"
+				"BuccaneerCommon",
+				"BuccaneerStats"
 			});
 	}
 }

@@ -43,6 +43,4 @@ private:
     // (using an unsigned int as there shouldn't be more than 4.2 million hangs during a time period, and if there is you have bigger problems)
     double InterimHangCount = 0.0;
     uint32 InterimFrameCount = 1;
-
-    double AppStartTime = 0.0;
 };

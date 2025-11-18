@@ -17,7 +17,8 @@ public class Buccaneer4PixelStreaming : ModuleRules
 				"Json",
 				"CoreUObject",
 				"DeveloperSettings",
-				"EngineSettings"
+				"EngineSettings",
+				"BuccaneerCommon"
 			});
 			
 		
@@ -28,7 +29,8 @@ public class Buccaneer4PixelStreaming : ModuleRules
 				"Engine",
 				"Slate",
 				"SlateCore",
-				"BuccaneerCommon"
+				"BuccaneerCommon",
+				"BuccaneerStats"
 			});
 	}
 }

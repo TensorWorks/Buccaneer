@@ -25,5 +25,5 @@ private:
 	double LoggingStart;
 	double ReportingInterval;
 
-    TMap<FPixelStreamingPlayerId, TMap<FString, FBuccaneerMetric>> PlayerMetrics;
+    TMap<FString, TArray<FBuccaneerMetric>> PlayerMetricsMap;
 };

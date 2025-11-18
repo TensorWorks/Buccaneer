@@ -58,7 +58,7 @@ void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection &StatsCollecti
     if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
     {
         // Case: Sending stats to disk (we want to use our un-nested JSON format)
-        TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJsonUnnested();
+        TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJsonNested();
         TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
         JsonObject->SetField("id", JsonBuccaneerID);
         WriteJSON(TEXT("stats.json"), JsonObject);

@@ -18,7 +18,7 @@
 
 void FBuccaneerStatsModule::StartupModule()
 {
-    AppStartTime = LastTickTime = InterimStart = FPlatformTime::Seconds();
+    LastTickTime = InterimStart = FPlatformTime::Seconds();
 }
 
 void FBuccaneerStatsModule::ShutdownModule()
@@ -110,7 +110,7 @@ void FBuccaneerStatsModule::ComputeUsedMemory()
 void FBuccaneerStatsModule::PushStats()
 {
     FMetricsCollection MetricsCollection;
-    MetricsCollection.Timestamp = FMath::RoundToInt64((FPlatformTime::Seconds() - AppStartTime) * 1000);
+    MetricsCollection.Timestamp = IBuccaneerStatsModule::GetStatsTimestamp();
     MetricsCollection.Metrics.Add({"mean_fps", "The average fps", InterimMeanFrameTime != 0.0 ? (float)(1000.0 / InterimMeanFrameTime) : 0.0f});
     MetricsCollection.Metrics.Add({"mean_frametime", "The average frametime", InterimMeanFrameTime});
     MetricsCollection.Metrics.Add({"mean_gamethreadtime", "The average game thread time", InterimMeanGameThreadTime});
