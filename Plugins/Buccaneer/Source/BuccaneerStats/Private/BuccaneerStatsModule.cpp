@@ -57,6 +57,11 @@ void FBuccaneerStatsModule::Tick(float DeltaTime)
     }
     else
     {
+        // Get application resolution
+        const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
+        ResolutionX = ViewportSize.X;
+        ResolutionY = ViewportSize.Y;
+
         double GameThreadTime = FPlatformTime::ToMilliseconds(GGameThreadTime);
         double GPUFrameTime = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0));
         double RenderThreadTime = FPlatformTime::ToMilliseconds(GRenderThreadTime);
@@ -121,6 +126,8 @@ void FBuccaneerStatsModule::PushStats()
     MetricsCollection.SingleValueMetrics.Add({"memory_physical", "The physical memory usage", UsedPhysicalMemory});
     MetricsCollection.SingleValueMetrics.Add({"memory_gpu", "The gpu memory usage", UsedGPUMemory});
     MetricsCollection.SingleValueMetrics.Add({"num_hangs", "The number of frames hung in the recording interval", (double)InterimHangCount});
+    MetricsCollection.SingleValueMetrics.Add({"res_x", "The width of the application", ResolutionX});
+    MetricsCollection.SingleValueMetrics.Add({"res_y", "The height of the application", ResolutionY});
     IBuccaneerCommonModule::Get().SendMetrics(MetricsCollection);
 }
 
