@@ -1,5 +1,25 @@
 #include "BuccaneerMetrics.h"
 
+namespace
+{
+	// Helper function to format metric names to be Prometheus-compatible
+	// Valid Prometheus names must be alphanumeric or underscores
+	FString FormatMetricName(const FString& Name)
+	{
+		FString FormattedName = Name;
+		FormattedName.ReplaceInline(TEXT("-"), TEXT("_"));
+		FormattedName.ReplaceInline(TEXT("."), TEXT("_"));
+		FormattedName.ReplaceInline(TEXT(" "), TEXT("_"));
+		FormattedName.ReplaceInline(TEXT("/"), TEXT("_"));
+		FormattedName.ReplaceInline(TEXT("\\"), TEXT("_"));
+		FormattedName.ReplaceInline(TEXT("("), TEXT(""));
+		FormattedName.ReplaceInline(TEXT(")"), TEXT(""));
+		FormattedName.ReplaceInline(TEXT("\""), TEXT(""));
+		FormattedName.ReplaceInline(TEXT("'"), TEXT(""));
+		return FormattedName;
+	}
+}
+
 TSharedPtr<FJsonObject> FMetricsCollection::ToJson() const
 {
 
@@ -28,10 +48,12 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJson() const
 	// Build JSON object using the "single value metrics" we have stored in the FMetricsCollection
 	for (const FBuccaneerMetric &Stat : SingleValueMetrics)
 	{
+		FString MetricName = FormatMetricName(Stat.Name);
+
 		TSharedPtr<FJsonObject> MetricJson = MakeShareable(new FJsonObject());
 		MetricJson->SetStringField(TEXT("description"), Stat.Description);
 		MetricJson->SetNumberField(TEXT("value"), Stat.Value);
-		MetricsJson->SetObjectField(Stat.Name, MetricJson);
+		MetricsJson->SetObjectField(MetricName, MetricJson);
 	}
 
 	/**
@@ -80,11 +102,7 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJson() const
 		// and store it the JSON we are building up
 		for (const FBuccaneerMetric& Metric : GroupMetricsArr)
 		{
-			const FString& OriginalMetricName = Metric.Name;
-
-			// Replace any hyphens from the stat name with underscores to ensure valid prometheus metric names
-			FString MetricName = OriginalMetricName;
-			MetricName.ReplaceInline(TEXT("-"), TEXT("_"));
+			FString MetricName = FormatMetricName(Metric.Name);
 
 			if(!GroupMetricsToJsonMap.Contains(MetricName))
 			{

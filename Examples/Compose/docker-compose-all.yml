@@ -1,11 +1,26 @@
 services:
-  buccaneer-server:
-    build:
-      context: ../../Server/BuccaneerServer
-      dockerfile: Dockerfile
+  unreal:
+    image: "tensorworks/buccaneerdemo-application"
+    command: [ "-PixelStreamingURL=ws://127.0.0.1:8888", "-BuccaneerURL=http://127.0.0.1:8000", "-RenderOffScreen", "-Res=1920x1080" ]
+    container_name: unreal
+    network_mode: "host"
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            capabilities: [gpu]
+            count: 1
+
+  cirrus:
+    image: "tensorworks/buccaneerdemo-cirrus"
+    container_name: cirrus
+    network_mode: "host"
+
+  buccaneerserver:
+    image: "tensorworks/buccaneerdemo-buccaneerserver"
     container_name: buccaneerserver
-    ports:
-      - "8000:8000"
+    network_mode: "host"
 
   prometheus:
     image: "prom/prometheus"
@@ -29,7 +44,6 @@ services:
     network_mode: "host"
     volumes:
     - "../../Configs/loki-local-config.yaml:/etc/loki/loki-local-config.yaml"
-    command: -config.file=/etc/loki/loki-local-config.yaml
 
   promtail:
     image: grafana/promtail
