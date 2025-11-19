@@ -25,5 +25,5 @@ private:
 	double LoggingStart;
 	double ReportingInterval;
 
-    TMap<FString, TArray<FBuccaneerMetric>> PlayerMetricsMap;
+	FMetricsCollection MetricsCollection;
 };

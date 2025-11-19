@@ -21,5 +21,5 @@ public:
 private:
 	double LoggingStart;
 
-    TMap<FString, TArray<FBuccaneerMetric>> PlayerMetricsMap;
+	FMetricsCollection MetricsCollection;
 };

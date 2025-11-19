@@ -69,12 +69,6 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
 		return;
 	}
 
-	// We don't care about application level stats
-	if(PlayerId == TEXT("Application"))
-	{
-		return;
-	}
-
 	FBuccaneerMetric NewMetric;
 	NewMetric.Name = StatName.ToString();
 	if (const FString* Description = PSStatDescriptionMap.Find(StatName.ToString()))
@@ -88,35 +82,54 @@ void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatN
 	}
 	NewMetric.Value = StatValue;
 
-	// All metrics are now player-specific
-	TArray<FBuccaneerMetric>& PlayerStats = PlayerMetricsMap.FindOrAdd(PlayerId);
-	bool bFound = false;
-	for (FBuccaneerMetric& Metric : PlayerStats)
+	// Application level stats go into SingleValueMetrics
+	if(PlayerId == TEXT("Application"))
 	{
-		if (Metric.Name == NewMetric.Name)
+		bool bFound = false;
+		for (FBuccaneerMetric& Metric : MetricsCollection.SingleValueMetrics)
 		{
-			Metric.Value = NewMetric.Value;
-			bFound = true;
-			break;
+			if (Metric.Name == NewMetric.Name)
+			{
+				Metric.Value = NewMetric.Value;
+				bFound = true;
+				break;
+			}
+		}
+		if (!bFound)
+		{
+			MetricsCollection.SingleValueMetrics.Add(NewMetric);
 		}
 	}
-	if (!bFound)
+	else
 	{
-		PlayerStats.Add(NewMetric);
+		// All other metrics are player-specific
+		TArray<FBuccaneerMetric>& PlayerStats = MetricsCollection.GroupedMetrics.FindOrAdd(PlayerId);
+		bool bFound = false;
+		for (FBuccaneerMetric& Metric : PlayerStats)
+		{
+			if (Metric.Name == NewMetric.Name)
+			{
+				Metric.Value = NewMetric.Value;
+				bFound = true;
+				break;
+			}
+		}
+		if (!bFound)
+		{
+			PlayerStats.Add(NewMetric);
+		}
 	}
 
 	double NowTime = IBuccaneerStatsModule::GetStatsTimestamp();
 	if ((NowTime - LoggingStart) >= UBuccaneer4PixelStreaming2Settings::CVarReportingInterval.GetValueOnAnyThread())
 	{
 		LoggingStart = NowTime;
-		
-		FMetricsCollection Collection;
-		Collection.Timestamp = LoggingStart;
-		Collection.GroupedMetrics = PlayerMetricsMap; // Copy player metrics
+		MetricsCollection.Timestamp = LoggingStart;
 
-		IBuccaneerCommonModule::Get().SendMetrics(Collection);
+		IBuccaneerCommonModule::Get().SendMetrics(MetricsCollection);
 
-		PlayerMetricsMap.Empty();
+		MetricsCollection.SingleValueMetrics.Empty();
+		MetricsCollection.GroupedMetrics.Empty();
 	}
 }
 
