@@ -111,16 +111,16 @@ void FBuccaneerStatsModule::PushStats()
 {
     FMetricsCollection MetricsCollection;
     MetricsCollection.Timestamp = IBuccaneerStatsModule::GetStatsTimestamp();
-    MetricsCollection.Metrics.Add({"mean_fps", "The average fps", InterimMeanFrameTime != 0.0 ? (float)(1000.0 / InterimMeanFrameTime) : 0.0f});
-    MetricsCollection.Metrics.Add({"mean_frametime", "The average frametime", InterimMeanFrameTime});
-    MetricsCollection.Metrics.Add({"mean_gamethreadtime", "The average game thread time", InterimMeanGameThreadTime});
-    MetricsCollection.Metrics.Add({"mean_gputime", "The average gpu time", InterimMeanGPUTime});
-    MetricsCollection.Metrics.Add({"mean_rendertime", "The average render thread time", InterimMeanRenderThreadTime});
-    MetricsCollection.Metrics.Add({"mean_rhithreadtime", "The average rhi thread time", InterimMeanRHIThreadTime});
-    MetricsCollection.Metrics.Add({"memory_virtual", "The virtual memory usage", UsedVirtualMemory});
-    MetricsCollection.Metrics.Add({"memory_physical", "The physical memory usage", UsedPhysicalMemory});
-    MetricsCollection.Metrics.Add({"memory_gpu", "The gpu memory usage", UsedGPUMemory});
-    MetricsCollection.Metrics.Add({"num_hangs", "The number of frames hung in the recording interval", (double)InterimHangCount});
+    MetricsCollection.SingleValueMetrics.Add({"mean_fps", "The average fps", InterimMeanFrameTime != 0.0 ? (float)(1000.0 / InterimMeanFrameTime) : 0.0f});
+    MetricsCollection.SingleValueMetrics.Add({"mean_frametime", "The average frametime", InterimMeanFrameTime});
+    MetricsCollection.SingleValueMetrics.Add({"mean_gamethreadtime", "The average game thread time", InterimMeanGameThreadTime});
+    MetricsCollection.SingleValueMetrics.Add({"mean_gputime", "The average gpu time", InterimMeanGPUTime});
+    MetricsCollection.SingleValueMetrics.Add({"mean_rendertime", "The average render thread time", InterimMeanRenderThreadTime});
+    MetricsCollection.SingleValueMetrics.Add({"mean_rhithreadtime", "The average rhi thread time", InterimMeanRHIThreadTime});
+    MetricsCollection.SingleValueMetrics.Add({"memory_virtual", "The virtual memory usage", UsedVirtualMemory});
+    MetricsCollection.SingleValueMetrics.Add({"memory_physical", "The physical memory usage", UsedPhysicalMemory});
+    MetricsCollection.SingleValueMetrics.Add({"memory_gpu", "The gpu memory usage", UsedGPUMemory});
+    MetricsCollection.SingleValueMetrics.Add({"num_hangs", "The number of frames hung in the recording interval", (double)InterimHangCount});
     IBuccaneerCommonModule::Get().SendMetrics(MetricsCollection);
 }
 

@@ -25,12 +25,18 @@ struct FBuccaneerMetric
 struct FMetricsCollection
 {
 	double Timestamp;
-	TArray<FBuccaneerMetric> Metrics; // For global metrics
-	TMap<FString, TArray<FBuccaneerMetric>> PlayerMetrics; // For per-player metrics
+
+	// These metrics have a single value each.
+	// They can be used to record things such as global metrics, application-wide stats, session stats, etc.
+	TArray<FBuccaneerMetric> SingleValueMetrics;
+
+	// These metrics are stored in logical groups by unique ids (key: player id, value: array of metrics).
+	// For example, they could be used for per-peer metrics for Pixel Streaming or per-player metrics in a local multiplayer game.
+	TMap<FString, TArray<FBuccaneerMetric>> GroupedMetrics;
 
 	/**
 	 * @brief Converts the FMetricsCollection to a nested FJsonObject.
 	 * @return A TSharedPtr to the created FJsonObject.
 	 */
-	TSharedPtr<FJsonObject> ToJsonNested() const;
+	TSharedPtr<FJsonObject> ToJson() const;
 };

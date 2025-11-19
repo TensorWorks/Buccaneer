@@ -114,7 +114,7 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 		
 		FMetricsCollection Collection;
 		Collection.Timestamp = LoggingStart;
-		Collection.PlayerMetrics = PlayerMetricsMap; // Copy player metrics
+		Collection.GroupedMetrics = PlayerMetricsMap; // Copy player metrics
 
 		IBuccaneerCommonModule::Get().SendMetrics(Collection);
 

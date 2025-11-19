@@ -51,25 +51,30 @@ bool FBuccaneerCommonModule::IsReady()
     return bModuleReady;
 }
 
-void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection &StatsCollection)
+void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection& StatsCollection)
 {
     const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
 
+    TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJson();
+    TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
+    JsonObject->SetField("id", JsonBuccaneerID);
+
+    // Check if there is any metadata to send
+    if(UBuccaneerSettings::CVarMetadata.GetValueOnAnyThread() != "")
+    {
+        JsonObject->SetField("metadata", MakeShared<FJsonValueObject>(MetadataJson));
+    }
+
+    // Write metrics JSON to either HTTP Buccaneer server or to disk depending on the CVar settings
+
+    // Case: Sending stats to disk
     if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
     {
-        // Case: Sending stats to disk (we want to use our un-nested JSON format)
-        TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJsonNested();
-        TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
-        JsonObject->SetField("id", JsonBuccaneerID);
         WriteJSON(TEXT("stats.json"), JsonObject);
     }
+    // Case: Sending stats to Buccaneer server
 	else if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread() != "")
     {
-        // Case: Sending stats to Buccaneer server (we want to use the nested JSON format)
-        TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJsonNested();
-        TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
-        JsonObject->SetField("id", JsonBuccaneerID);
-        JsonObject->SetField("metadata", MakeShared<FJsonValueObject>(MetadataJson));
         SendHTTP(UBuccaneerSettings::CVarURL.GetValueOnAnyThread() + FString("/stats"), JsonObject);
     }
 }
