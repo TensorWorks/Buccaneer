@@ -133,12 +133,12 @@ TSharedPtr<FJsonObject> FMetricsCollection::ToJson() const
 	}
 
 	// Iterate the `GroupMetricsToJsonMap` and add each stat to the main MetricsJson
-	for(auto const& MetricEntry : GroupMetricsToJsonMap)
-	{
-		FString& MetricName = MetricEntry.Key;
-		TSharedPtr<FJsonObject>& MetricJson = MetricEntry.Value;
-		MetricsJson->SetObjectField(MetricName, MetricJson);
-	}
+    for (const auto& MetricEntry : GroupMetricsToJsonMap)
+    {
+        const FString& MetricName = MetricEntry.Key;
+        const TSharedPtr<FJsonObject>& MetricJson = MetricEntry.Value;
+        MetricsJson->SetObjectField(MetricName, MetricJson);
+    }
 
 	JsonObject->SetObjectField(TEXT("metrics"), MetricsJson);
 	JsonObject->SetNumberField(TEXT("timestamp"), Timestamp);
