@@ -48,12 +48,18 @@ type record struct {
 type arbitraryJson map[string]interface{}
 
 func (collector *collector) Describe(ch chan<- *prometheus.Desc) {
+	collectorsMutex.Lock()
+	defer collectorsMutex.Unlock()
+
 	for _, metric := range collector.metrics {
 		ch <- metric.description
 	}
 }
 
 func (collector *collector) Collect(ch chan<- prometheus.Metric) {
+	collectorsMutex.Lock()
+	defer collectorsMutex.Unlock()
+
 	for _, metric := range collector.metrics {
 
 		if record, ok := metric.records[""]; ok {
@@ -161,6 +167,8 @@ func main() {
 
 		if _, exists := collectors.Load(id.(string)); !exists {
 			// this is the first time we're seeing this ID, so configure accordingly
+			collectorsMutex.Lock()
+
 			ts := time.Now().Unix()
 			collector := collector{
 				metadata:       make(map[string]string),
@@ -231,6 +239,8 @@ func main() {
 			// register collector with Prometheus
 			prometheus.Register(&collector)
 			log.Printf("Registering collector for instance \"%s\"", id)
+
+			collectorsMutex.Unlock()
 
 			// return OK
 			res.WriteHeader(http.StatusOK)
