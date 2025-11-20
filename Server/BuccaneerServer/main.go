@@ -236,11 +236,13 @@ func main() {
 
 			// store collector in our internal map
 			collectors.Store(id, collector)
-			// register collector with Prometheus
-			prometheus.Register(&collector)
-			log.Printf("Registering collector for instance \"%s\"", id)
 
 			collectorsMutex.Unlock()
+
+			// register collector with Prometheus (must be done outside the mutex lock
+			// because Prometheus will call Describe which also needs the mutex)
+			prometheus.Register(&collector)
+			log.Printf("Registering collector for instance \"%s\"", id)
 
 			// return OK
 			res.WriteHeader(http.StatusOK)
