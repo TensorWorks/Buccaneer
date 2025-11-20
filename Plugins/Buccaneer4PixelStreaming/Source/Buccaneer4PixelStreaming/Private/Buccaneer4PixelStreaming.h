@@ -23,7 +23,5 @@ public:
 	
 private:
 	double LoggingStart;
-	double ReportingInterval;
-
 	FMetricsCollection MetricsCollection;
 };

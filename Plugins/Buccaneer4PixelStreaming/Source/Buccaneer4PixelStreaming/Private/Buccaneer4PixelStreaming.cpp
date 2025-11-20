@@ -50,7 +50,6 @@ TMap<FString, FString> StatDescriptionMap = {
 void FBuccaneer4PixelStreamingModule::StartupModule()
 {
 	LoggingStart = FPlatformTime::Seconds();
-	ReportingInterval = 1;
 
 	if (UPixelStreamingDelegates *Delegates = UPixelStreamingDelegates::GetPixelStreamingDelegates())
 	{
@@ -123,7 +122,8 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 	}
 
 	double NowTime = IBuccaneerStatsModule::GetStatsTimestamp();
-	if ((NowTime - LoggingStart) >= ReportingInterval)
+	const double ReportingIntervalSeconds = UBuccaneer4PixelStreamingSettings::CVarReportingInterval.GetValueOnAnyThread();
+	if (ReportingIntervalSeconds > 0.0 && (NowTime - LoggingStart) >= ReportingIntervalSeconds)
 	{
 		LoggingStart = NowTime;
 		MetricsCollection.Timestamp = LoggingStart;

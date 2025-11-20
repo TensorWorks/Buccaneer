@@ -58,9 +58,12 @@ void FBuccaneerStatsModule::Tick(float DeltaTime)
     else
     {
         // Get application resolution
-        const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
-        ResolutionX = ViewportSize.X;
-        ResolutionY = ViewportSize.Y;
+        if(GEngine && GEngine->GameViewport && GEngine->GameViewport->Viewport)
+        {
+            const FVector2D ViewportSize = FVector2D(GEngine->GameViewport->Viewport->GetSizeXY());
+            ResolutionX = ViewportSize.X;
+            ResolutionY = ViewportSize.Y;
+        }
 
         double GameThreadTime = FPlatformTime::ToMilliseconds(GGameThreadTime);
         double GPUFrameTime = FPlatformTime::ToMilliseconds(RHIGetGPUFrameCycles(0));
