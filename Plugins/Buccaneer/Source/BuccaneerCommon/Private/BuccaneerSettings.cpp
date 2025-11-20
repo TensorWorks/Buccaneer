@@ -75,11 +75,11 @@ namespace Util
                 }
 
                 FString Key, Value;
-                Pair.Split(TEXT(":"), &Key, &Value);
-                if(!Key.IsEmpty() && Value.IsEmpty())
-                {
-                    Map.Add(Key, Value);
-                }
+			Pair.Split(TEXT(":"), &Key, &Value);
+			if(!Key.IsEmpty() && !Value.IsEmpty())
+			{
+				Map.Add(Key, Value);
+			}
             }
         }
 
@@ -187,11 +187,11 @@ TMap<FString, FString> UBuccaneerSettings::GetMetadata()
             }
         
             FString Key, Value;
-            Pair.Split(TEXT(":"), &Key, &Value);
-            if(!Key.IsEmpty() && Value.IsEmpty())
-            {
-                MetadataMap.Add(Key, Value);
-            }
+			Pair.Split(TEXT(":"), &Key, &Value);
+			if(!Key.IsEmpty() && !Value.IsEmpty())
+			{
+				MetadataMap.Add(Key, Value);
+			}
         }
     }
 

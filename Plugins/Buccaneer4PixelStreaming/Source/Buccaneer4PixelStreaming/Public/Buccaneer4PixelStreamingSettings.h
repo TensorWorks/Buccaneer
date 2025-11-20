@@ -25,8 +25,6 @@ public:
 		))
     bool Enabled = true;
 
-	static TAutoConsoleVariable<float> CVarReportingInterval;
-
 	// Begin UDeveloperSettings Interface
 	virtual FName GetCategoryName() const override;
 

@@ -92,7 +92,7 @@ void FBuccaneerStatsModule::ComputeUsedMemory()
 {
     FPlatformMemoryStats MemoryStats = FPlatformMemory::GetStats();
 
-    const unsigned int BytesPerMB = (8u * 1024u * 1024u);
+    const unsigned int BytesPerMB = (1024u * 1024u);
     UsedVirtualMemory = static_cast<double>(MemoryStats.UsedVirtual) / BytesPerMB;
     UsedPhysicalMemory = static_cast<double>(MemoryStats.UsedPhysical) / BytesPerMB;
 

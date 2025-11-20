@@ -26,8 +26,8 @@ void FBuccaneerEventsModule::EmitEvent(FString Level, FString Event)
     UE_LOGFMT(LogBuccaneerEvents, Verbose, "{0}: {1}", Level, Event);
 
     TSharedPtr<FJsonObject> JsonObject = MakeShareable(new FJsonObject());
-    JsonObject->SetField("level", MakeShared<FJsonValueString>((TEXT("%s"), *Level)));
-    JsonObject->SetField("message", MakeShared<FJsonValueString>((TEXT("%s"), *Event)));
+    JsonObject->SetField("level", MakeShared<FJsonValueString>(Level));
+    JsonObject->SetField("message", MakeShared<FJsonValueString>(Event));
 
     IBuccaneerCommonModule::Get().SendEvent(JsonObject);
 }

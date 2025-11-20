@@ -56,7 +56,7 @@ void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection& StatsCollecti
     const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
 
     TSharedPtr<FJsonObject> JsonObject = StatsCollection.ToJson();
-    TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
+    TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>(BuccaneerID);
     JsonObject->SetField("id", JsonBuccaneerID);
 
     // Check if there is any metadata to send
@@ -82,7 +82,7 @@ void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection& StatsCollecti
 void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
 {
     const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
-    TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>((TEXT("%s"), *BuccaneerID));
+    TSharedPtr<FJsonValueString> JsonBuccaneerID = MakeShared<FJsonValueString>(BuccaneerID);
     JsonObject->SetField("id", JsonBuccaneerID);
 
     // Only send events to server if we are not in JSON writing mode
@@ -94,6 +94,9 @@ void FBuccaneerCommonModule::SendEvent(TSharedPtr<FJsonObject> JsonObject)
 
 void FBuccaneerCommonModule::WriteJSON(FString FileName, TSharedPtr<FJsonObject> JsonObject)
 {
+    static FCriticalSection JsonFileMutex;
+    FScopeLock Lock(&JsonFileMutex);
+
     FString FilePath = FPaths::Combine(UBuccaneerSettings::CVarJSONOutputDirectory.GetValueOnAnyThread(), FileName);
 
     //  This is how we turn the JSON object into a string
@@ -185,6 +188,8 @@ void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonO
 void FBuccaneerCommonModule::FormatMetadata(IConsoleVariable *Var)
 {
     // Additional Metadata
+	MetadataJson = MakeShared<FJsonObject>();
+
     TMap<FString, FString> MetadataMap = UBuccaneerSettings::GetMetadata();
     for (const TPair<FString, FString> &Pair : MetadataMap)
     {
@@ -193,7 +198,7 @@ void FBuccaneerCommonModule::FormatMetadata(IConsoleVariable *Var)
             continue;
         }
 
-        MetadataJson->SetField(*Pair.Key, MakeShared<FJsonValueString>((TEXT("%s"), *Pair.Value)));
+        MetadataJson->SetField(*Pair.Key, MakeShared<FJsonValueString>(Pair.Value));
     }
 }
 
