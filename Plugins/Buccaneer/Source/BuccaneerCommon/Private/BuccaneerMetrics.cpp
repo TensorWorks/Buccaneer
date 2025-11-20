@@ -16,6 +16,8 @@ namespace
 		FormattedName.ReplaceInline(TEXT(")"), TEXT(""));
 		FormattedName.ReplaceInline(TEXT("\""), TEXT(""));
 		FormattedName.ReplaceInline(TEXT("'"), TEXT(""));
+		FormattedName.ReplaceInline(TEXT(">"), TEXT(""));
+		FormattedName.ReplaceInline(TEXT("<"), TEXT(""));
 		return FormattedName;
 	}
 }
