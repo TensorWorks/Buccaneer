@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES6",
+    "moduleResolution": "node",
+    "lib": ["ES2022"],
+    "types": ["node", "undici-types"],
+    "outDir": "./dist",
+	"declaration": false,
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true
+  },
+  "include": ["*.ts"],
+  "exclude": ["node_modules", "*.js"]
+}

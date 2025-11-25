@@ -1,0 +1,39 @@
+{
+  "name": "@tensorworks/buccaneer-metrics-client",
+  "version": "1.0.0",
+  "description": "TypeScript client for pushing metrics to Buccaneer server",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "types/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.11",
+    "@types/node": "^20.10.0",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.1",
+    "typescript": "^5.3.0",
+    "undici-types": "^6.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TensorWorks/Buccaneer.git"
+  },
+  "keywords": [
+    "stats",
+    "prometheus",
+    "Unreal",
+    "Engine",
+    "TensorWorks"
+  ],
+  "author": "TensorWorks Pty Ltd.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/TensorWorks/Buccaneer/issues"
+  },
+  "homepage": "https://github.com/TensorWorks/Buccaneer#readme"
+}
