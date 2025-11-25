@@ -28,4 +28,5 @@ private:
     void FormatMetadata(IConsoleVariable* Var);
 
     TSharedPtr<FJsonObject> MetadataJson = MakeShareable(new FJsonObject());
+    FString CachedJSONOutputFileName;
 };

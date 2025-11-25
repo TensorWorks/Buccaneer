@@ -33,6 +33,29 @@ void FBuccaneerCommonModule::StartupModule()
 
     FormatMetadata(nullptr);
 
+    // Generate the JSON output filename once at startup if using JSON output
+    if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
+    {
+        FString OutputFile = UBuccaneerSettings::CVarJSONOutputFile.GetValueOnAnyThread();
+        if (OutputFile.IsEmpty())
+        {
+            // Generate dynamic filename: <BuccaneerID>_<UnixTimestamp>_Stats.json
+            const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
+            int64 UnixTimestamp = FDateTime::UtcNow().ToUnixTimestamp();
+            FString SanitizedID = BuccaneerID.Replace(TEXT(":"), TEXT("-")).Replace(TEXT("/"), TEXT("-"));
+            OutputFile = FString::Printf(TEXT("%s_%lld_Stats.json"), *SanitizedID, UnixTimestamp);
+        }
+        else
+        {
+            // Ensure .json extension is present (add if missing, don't duplicate if already there)
+            if (!OutputFile.EndsWith(TEXT(".json"), ESearchCase::IgnoreCase))
+            {
+                OutputFile += TEXT(".json");
+            }
+        }
+        CachedJSONOutputFileName = OutputFile;
+    }
+
     bModuleReady = true;
     ReadyEvent.Broadcast(*this);
 }
@@ -70,7 +93,7 @@ void FBuccaneerCommonModule::SendMetrics(const FMetricsCollection& StatsCollecti
     // Case: Sending stats to disk
     if (UBuccaneerSettings::CVarEnableJSONOutput.GetValueOnAnyThread())
     {
-        WriteJSON(TEXT("stats.json"), JsonObject);
+        WriteJSON(CachedJSONOutputFileName, JsonObject);
     }
     // Case: Sending stats to Buccaneer server
 	else if (UBuccaneerSettings::CVarURL.GetValueOnAnyThread() != "")

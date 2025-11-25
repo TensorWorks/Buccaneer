@@ -86,6 +86,13 @@ public:
         ))
     FString JSONOutputDirectory = FPaths::ProjectLogDir();
 
+    static TAutoConsoleVariable<FString> CVarJSONOutputFile;
+    UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
+        DisplayName = "JSON Output File",
+        ToolTip = "The filename for JSON output (default: <BuccaneerID>_<UnixTimestamp>_Stats.json)"
+        ))
+    FString JSONOutputFile;
+
 	// Begin UDeveloperSettings Interface
 	virtual FName GetCategoryName() const override;
 
