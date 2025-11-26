@@ -132,7 +132,7 @@ describe('Buccaneer E2E: Metrics Pipeline', () => {
     const metricName = `test_single_metric_${timestamp}`;
     const metricValue = 42.5;
     
-    metrics.pushStat(metricName, metricValue, 'E2E test single metric');
+    metrics.storeStat(metricName, metricValue, 'E2E test single metric');
 
     // Send to Buccaneer server
     console.log(`Sending metric: ${metricName} = ${metricValue}`);
@@ -166,7 +166,7 @@ describe('Buccaneer E2E: Metrics Pipeline', () => {
     
     console.log(`Sending grouped metric: ${metricName}`);
     groups.forEach((group, index) => {
-      metrics.pushStatByGroup(group, metricName, values[index], 'E2E test grouped metric');
+      metrics.storeStatByGroup(group, metricName, values[index], 'E2E test grouped metric');
       console.log(`  ${group}: ${values[index]}`);
     });
 
@@ -197,7 +197,7 @@ describe('Buccaneer E2E: Metrics Pipeline', () => {
     console.log('Sending batch 1...');
     const metrics1 = new MetricsCollection(instanceId, { batch: '1' });
     const metric1Name = `test_batch_1_${timestamp}`;
-    metrics1.pushStat(metric1Name, 111, 'First batch');
+    metrics1.storeStat(metric1Name, 111, 'First batch');
     await metrics1.send(BUCCANEER_URL);
     console.log(`  ✓ Sent: ${metric1Name} = 111`);
     
@@ -205,7 +205,7 @@ describe('Buccaneer E2E: Metrics Pipeline', () => {
     console.log('Sending batch 2...');
     const metrics2 = new MetricsCollection(instanceId, { batch: '2' });
     const metric2Name = `test_batch_2_${timestamp}`;
-    metrics2.pushStat(metric2Name, 222, 'Second batch');
+    metrics2.storeStat(metric2Name, 222, 'Second batch');
     await metrics2.send(BUCCANEER_URL);
     console.log(`  ✓ Sent: ${metric2Name} = 222\n`);
 
@@ -240,7 +240,7 @@ describe('Buccaneer E2E: Metrics Pipeline', () => {
     const originalName = `Frame Time (ms) - ${timestamp}`;
     const expectedFormattedName = `Frame_Time_ms___${timestamp}`;
     
-    metrics.pushStat(originalName, 16.67, 'Frame time metric');
+    metrics.storeStat(originalName, 16.67, 'Frame time metric');
     
     console.log(`Original name: "${originalName}"`);
     console.log(`Expected formatted: "${expectedFormattedName}"`);

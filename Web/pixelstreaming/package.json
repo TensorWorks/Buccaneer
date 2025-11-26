@@ -1,0 +1,32 @@
+{
+  "name": "@tensorworks/buccaneer-pixelstreaming",
+  "version": "1.0.0",
+  "description": "Pixel Streaming frontend integration for Buccaneer metrics collection",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "pixelstreaming",
+    "metrics",
+    "prometheus",
+    "buccaneer",
+    "unreal-engine"
+  ],
+  "author": "TensorWorks",
+  "license": "MIT",
+  "dependencies": {
+    "@epicgames-ps/lib-pixelstreamingfrontend-ue5.7": "0.2.1",
+    "@epicgames-ps/lib-pixelstreamingfrontend-ui-ue5.7": "0.1.2",
+    "@tensorworks/buccaneer-metrics-client": "file:../metrics-client"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0",
+    "vite": "^5.0.0"
+  }
+}

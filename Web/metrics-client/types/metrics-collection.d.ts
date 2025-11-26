@@ -41,7 +41,7 @@ export declare class MetricsCollection {
      * @param statValue - The numeric value
      * @param description - Optional description (defaults to stat name)
      */
-    pushStat(statName: string, statValue: number, description?: string): void;
+    storeStat(statName: string, statValue: number, description?: string): void;
     /**
      * Add or update a grouped metric (e.g., per-player stats)
      * @param groupName - The group identifier (e.g., "player0", "player1")
@@ -49,7 +49,7 @@ export declare class MetricsCollection {
      * @param statValue - The numeric value
      * @param description - Optional description (defaults to stat name)
      */
-    pushStatByGroup(groupName: string, statName: string, statValue: number, description?: string): void;
+    storeStatByGroup(groupName: string, statName: string, statValue: number, description?: string): void;
     /**
      * Get the ID for this metrics collection
      */

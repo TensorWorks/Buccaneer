@@ -72,15 +72,15 @@ The test suite covers:
 ### 1. Single-Value Metrics
 Tests basic metric push and retrieval:
 ```typescript
-metrics.pushStat('fps', 60);
+metrics.storeStat('fps', 60);
 // Verifies: fps = 60 in Prometheus
 ```
 
 ### 2. Grouped Metrics
 Tests per-group metrics (e.g., per-player stats):
 ```typescript
-metrics.pushStatByGroup('player_0', 'score', 100);
-metrics.pushStatByGroup('player_1', 'score', 200);
+metrics.storeStatByGroup('player_0', 'score', 100);
+metrics.storeStatByGroup('player_1', 'score', 200);
 // Verifies: score{group_id="player_0"} = 100
 //           score{group_id="player_1"} = 200
 ```
@@ -90,12 +90,12 @@ Tests that multiple metric collections from the same instance work:
 ```typescript
 // First batch
 const metrics1 = new MetricsCollection('instance-1');
-metrics1.pushStat('metric_a', 111);
+metrics1.storeStat('metric_a', 111);
 await metrics1.send(BUCCANEER_URL);
 
 // Second batch
 const metrics2 = new MetricsCollection('instance-1');
-metrics2.pushStat('metric_b', 222);
+metrics2.storeStat('metric_b', 222);
 await metrics2.send(BUCCANEER_URL);
 // Verifies: Both metrics exist in Prometheus
 ```
@@ -103,7 +103,7 @@ await metrics2.send(BUCCANEER_URL);
 ### 4. Metric Name Formatting
 Tests that special characters are properly converted:
 ```typescript
-metrics.pushStat('Frame Time (ms)', 16.67);
+metrics.storeStat('Frame Time (ms)', 16.67);
 // Verifies: Frame_Time_ms_ = 16.67 in Prometheus
 ```
 

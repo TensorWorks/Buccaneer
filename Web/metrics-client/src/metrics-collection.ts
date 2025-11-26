@@ -65,7 +65,7 @@ export class MetricsCollection {
      * @param statValue - The numeric value
      * @param description - Optional description (defaults to stat name)
      */
-    pushStat(statName: string, statValue: number, description?: string): void {
+    storeStat(statName: string, statValue: number, description?: string): void {
         const formattedName = formatMetricName(statName);
         this.metrics[formattedName] = {
             description: description || statName,
@@ -80,7 +80,7 @@ export class MetricsCollection {
      * @param statValue - The numeric value
      * @param description - Optional description (defaults to stat name)
      */
-    pushStatByGroup(groupName: string, statName: string, statValue: number, description?: string): void {
+    storeStatByGroup(groupName: string, statName: string, statValue: number, description?: string): void {
         const formattedName = formatMetricName(statName);
         const existing = this.metrics[formattedName];
 

@@ -20,17 +20,17 @@ async function main() {
     console.log('Creating sample metrics...');
 
     // Add some single-value metrics
-    metrics.pushStat('fps', 60, 'Frames Per Second');
-    metrics.pushStat('frame_time', 16.67, 'Frame Time in milliseconds');
-    metrics.pushStat('memory_used', 512.5, 'Memory Usage in MB');
-    metrics.pushStat('cpu_usage', 45.3, 'CPU Usage Percentage');
+    metrics.storeStat('fps', 60, 'Frames Per Second');
+    metrics.storeStat('frame_time', 16.67, 'Frame Time in milliseconds');
+    metrics.storeStat('memory_used', 512.5, 'Memory Usage in MB');
+    metrics.storeStat('cpu_usage', 45.3, 'CPU Usage Percentage');
 
     // Add grouped metrics (simulating multiple players)
     const players = ['player0', 'player1', 'player2'];
     players.forEach((player, index) => {
-        metrics.pushStatByGroup(player, 'score', (index + 1) * 1000, 'Player Score');
-        metrics.pushStatByGroup(player, 'ping', 20 + index * 10, 'Player Ping in ms');
-        metrics.pushStatByGroup(player, 'health', 100 - index * 10, 'Player Health');
+        metrics.storeStatByGroup(player, 'score', (index + 1) * 1000, 'Player Score');
+        metrics.storeStatByGroup(player, 'ping', 20 + index * 10, 'Player Ping in ms');
+        metrics.storeStatByGroup(player, 'health', 100 - index * 10, 'Player Health');
     });
 
     // Display the JSON payload

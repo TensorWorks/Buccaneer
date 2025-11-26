@@ -54,10 +54,10 @@ describe('MetricsCollection', () => {
         });
     });
 
-    describe('pushStat', () => {
+    describe('storeStat', () => {
         it('should add a single metric', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('fps', 60);
+            mc.storeStat('fps', 60);
             
             const json = mc.toJSON();
             expect(json.metrics.fps).toBeDefined();
@@ -66,7 +66,7 @@ describe('MetricsCollection', () => {
 
         it('should format metric names', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('frame-time', 16.67);
+            mc.storeStat('frame-time', 16.67);
             
             const json = mc.toJSON();
             expect(json.metrics.frame_time).toBeDefined();
@@ -75,7 +75,7 @@ describe('MetricsCollection', () => {
 
         it('should use custom description', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('fps', 60, 'Frames Per Second');
+            mc.storeStat('fps', 60, 'Frames Per Second');
             
             const json = mc.toJSON();
             expect(json.metrics.fps.description).toBe('Frames Per Second');
@@ -83,7 +83,7 @@ describe('MetricsCollection', () => {
 
         it('should default description to stat name', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('fps', 60);
+            mc.storeStat('fps', 60);
             
             const json = mc.toJSON();
             expect(json.metrics.fps.description).toBe('fps');
@@ -91,18 +91,18 @@ describe('MetricsCollection', () => {
 
         it('should update existing metrics', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('fps', 60);
-            mc.pushStat('fps', 120);
+            mc.storeStat('fps', 60);
+            mc.storeStat('fps', 120);
             
             const json = mc.toJSON();
             expect(json.metrics.fps.value).toBe(120);
         });
     });
 
-    describe('pushStatByGroup', () => {
+    describe('storeStatByGroup', () => {
         it('should add a grouped metric', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStatByGroup('player0', 'score', 100);
+            mc.storeStatByGroup('player0', 'score', 100);
             
             const json = mc.toJSON();
             expect(json.metrics.score).toBeDefined();
@@ -113,8 +113,8 @@ describe('MetricsCollection', () => {
 
         it('should add multiple groups to same metric', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStatByGroup('player0', 'score', 100);
-            mc.pushStatByGroup('player1', 'score', 200);
+            mc.storeStatByGroup('player0', 'score', 100);
+            mc.storeStatByGroup('player1', 'score', 200);
             
             const json = mc.toJSON();
             const groupedMetric = json.metrics.score as { description: string; value: Array<Record<string, number>> };
@@ -125,8 +125,8 @@ describe('MetricsCollection', () => {
 
         it('should update existing group value', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStatByGroup('player0', 'score', 100);
-            mc.pushStatByGroup('player0', 'score', 150);
+            mc.storeStatByGroup('player0', 'score', 100);
+            mc.storeStatByGroup('player0', 'score', 150);
             
             const json = mc.toJSON();
             const groupedMetric = json.metrics.score as { description: string; value: Array<Record<string, number>> };
@@ -136,7 +136,7 @@ describe('MetricsCollection', () => {
 
         it('should use custom description', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStatByGroup('player0', 'score', 100, 'Player Score');
+            mc.storeStatByGroup('player0', 'score', 100, 'Player Score');
             
             const json = mc.toJSON();
             expect(json.metrics.score.description).toBe('Player Score');
@@ -144,7 +144,7 @@ describe('MetricsCollection', () => {
 
         it('should format metric names', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStatByGroup('player0', 'ping-time', 50);
+            mc.storeStatByGroup('player0', 'ping-time', 50);
             
             const json = mc.toJSON();
             expect(json.metrics.ping_time).toBeDefined();
@@ -196,8 +196,8 @@ describe('MetricsCollection', () => {
 
         it('should include all metrics', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('fps', 60);
-            mc.pushStatByGroup('player0', 'score', 100);
+            mc.storeStat('fps', 60);
+            mc.storeStatByGroup('player0', 'score', 100);
             
             const json = mc.toJSON();
             expect(json.metrics.fps).toBeDefined();
@@ -208,8 +208,8 @@ describe('MetricsCollection', () => {
     describe('clear', () => {
         it('should remove all metrics', () => {
             const mc = new MetricsCollection('test-id');
-            mc.pushStat('fps', 60);
-            mc.pushStatByGroup('player0', 'score', 100);
+            mc.storeStat('fps', 60);
+            mc.storeStatByGroup('player0', 'score', 100);
             
             mc.clear();
             
@@ -219,7 +219,7 @@ describe('MetricsCollection', () => {
 
         it('should keep metadata', () => {
             const mc = new MetricsCollection('test-id', { foo: 'bar' });
-            mc.pushStat('fps', 60);
+            mc.storeStat('fps', 60);
             
             mc.clear();
             
