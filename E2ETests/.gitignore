@@ -1,0 +1,9 @@
+# Dependencies
+node_modules/
+
+# Test artifacts
+coverage/
+
+# IDE
+.vscode/
+.idea/

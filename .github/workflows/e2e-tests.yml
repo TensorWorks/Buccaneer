@@ -1,0 +1,76 @@
+name: E2E Tests
+
+on:
+  push:
+    branches: [ main, develop, web ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: |
+            Web/lib/package-lock.json
+            E2ETests/package-lock.json
+
+      - name: Build metrics client library
+        working-directory: Web/lib
+        run: |
+          npm ci
+          npm run build
+          npm test
+
+      - name: Install E2E test dependencies
+        working-directory: E2ETests
+        run: npm ci
+
+      - name: Start Docker services
+        working-directory: Examples/Compose
+        run: docker compose up -d --wait
+
+      - name: Wait for services to be ready
+        run: |
+          echo "Waiting for Buccaneer server..."
+          timeout 60 bash -c 'until curl -f http://localhost:8000/ > /dev/null 2>&1; do sleep 2; done' || (echo "Buccaneer server failed to start" && exit 1)
+          echo "Buccaneer server is ready"
+          
+          echo "Waiting for Prometheus..."
+          timeout 60 bash -c 'until curl -f http://localhost:9090/-/ready > /dev/null 2>&1; do sleep 2; done' || (echo "Prometheus failed to start" && exit 1)
+          echo "Prometheus is ready"
+
+      - name: Check Prometheus targets
+        run: |
+          echo "Checking Prometheus targets..."
+          curl -s http://localhost:9090/api/v1/targets | jq '.data.activeTargets[] | {job: .labels.job, health: .health, lastError: .lastError}'
+
+      - name: Run E2E tests
+        working-directory: E2ETests
+        run: npm test
+        env:
+          CI: true
+
+      - name: Show service logs on failure
+        if: failure()
+        working-directory: Examples/Compose
+        run: |
+          echo "=== Buccaneer Server Logs ==="
+          docker compose logs buccaneerserver --tail=100
+          echo ""
+          echo "=== Prometheus Logs ==="
+          docker compose logs prometheus --tail=100
+
+      - name: Stop Docker services
+        if: always()
+        working-directory: Examples/Compose
+        run: docker compose down -v
