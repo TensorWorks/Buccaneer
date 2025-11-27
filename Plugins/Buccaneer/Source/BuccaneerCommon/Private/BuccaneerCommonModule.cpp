@@ -19,11 +19,16 @@ void FBuccaneerCommonModule::StartupModule()
         return;
     }
 
-    FString InstanceIDOverride;
-    // Try and parse a pixel streaming ID for users who don't want to pollute their command line by specifying two IDs
-    if (FParse::Value(FCommandLine::Get(), TEXT("PixelStreamingID="), InstanceIDOverride))
+    // Auto-generate BuccaneerID if not provided
+    FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
+    if (BuccaneerID.IsEmpty())
     {
-        UBuccaneerSettings::CVarID->Set(*InstanceIDOverride, ECVF_SetByCommandline);
+        // Generate unique ID using short GUID
+        BuccaneerID = FGuid::NewGuid().ToString(EGuidFormats::Short);
+        
+        UBuccaneerSettings::CVarID->Set(*BuccaneerID, ECVF_SetByCommandline);
+        UE_LOGFMT(LogBuccaneerCommon, Warning, 
+            "No BuccaneerID provided. Auto-generated: {0}", BuccaneerID);
     }
 
     if (UBuccaneerSettings::FDelegates *Delegates = UBuccaneerSettings::Delegates())
@@ -39,11 +44,9 @@ void FBuccaneerCommonModule::StartupModule()
         FString OutputFile = UBuccaneerSettings::CVarJSONOutputFile.GetValueOnAnyThread();
         if (OutputFile.IsEmpty())
         {
-            // Generate dynamic filename: <BuccaneerID>_<UnixTimestamp>_Stats.json
-            const FString BuccaneerID = UBuccaneerSettings::CVarID.GetValueOnAnyThread();
-            int64 UnixTimestamp = FDateTime::UtcNow().ToUnixTimestamp();
+            // Generate default filename: <BuccaneerID>_Stats.json
             FString SanitizedID = BuccaneerID.Replace(TEXT(":"), TEXT("-")).Replace(TEXT("/"), TEXT("-"));
-            OutputFile = FString::Printf(TEXT("%s_%lld_Stats.json"), *SanitizedID, UnixTimestamp);
+            OutputFile = FString::Printf(TEXT("%s_Stats.json"), *SanitizedID);
         }
         else
         {

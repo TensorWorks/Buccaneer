@@ -37,9 +37,9 @@ public:
 	static TAutoConsoleVariable<FString> CVarID;
     UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
 		DisplayName = "ID",
-		ToolTip = "ID to identify this instance. Defaults to a new GUID"
+		ToolTip = "ID to identify this instance. Auto-generates a short GUID if not provided"
 		))
-    FString ID = FGuid::NewGuid().ToString();
+    FString ID;
 
     static TAutoConsoleVariable<bool> CVarEnableStats;
     UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
@@ -89,7 +89,7 @@ public:
     static TAutoConsoleVariable<FString> CVarJSONOutputFile;
     UPROPERTY(config, EditAnywhere, Category = "Buccaneer", meta = (
         DisplayName = "JSON Output File",
-        ToolTip = "The filename for JSON output (default: <BuccaneerID>_<UnixTimestamp>_Stats.json)"
+        ToolTip = "The filename for JSON output (default: <BuccaneerID>_Stats.json)"
         ))
     FString JSONOutputFile;
 
