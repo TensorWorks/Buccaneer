@@ -120,23 +120,82 @@ MyBuccaneerApplication.exe -BuccaneerURL="http://127.0.0.1:8000"
 ```
 
 
-## Running the Docker Compose demo
+## Running with Docker Compose (Development Setup)
 
-To try Buccaneer with a demo project, you can use the Docker Compose demo located in the [Examples](./Examples) subdirectory. The demo has the following requirements:
+For development and testing with your own Unreal Engine application, Buccaneer provides a lightweight Docker Compose configuration that starts only the Buccaneer server and monitoring components (Prometheus, Grafana, Loki, and Promtail). This allows you to quickly set up the monitoring stack while you develop and run your own Unreal Engine application locally.
+
+### Requirements
+
+- [Docker](https://www.docker.com/) with Docker Compose support
+
+### Starting the Monitoring Stack
+
+To start the Buccaneer server and monitoring components, run the following command from the repository root:
+
+```bash
+docker compose -f Examples/Compose/docker-compose.yml up
+```
+
+Or navigate to the [Examples/Compose](./Examples/Compose) subdirectory and run:
+
+```bash
+docker compose up
+```
+
+Docker Compose will build the Buccaneer server from the local source code and start all required containers. Once everything is running, you can access:
+
+- <http://127.0.0.1:3000/dashboards> - Grafana dashboard for viewing metrics. Log in using the username `admin` and the password `admin`, and select "Unreal Engine Metrics" from the list of available dashboards.
+
+### Running Your Unreal Engine Application
+
+After starting the monitoring stack, launch your Unreal Engine application with the Buccaneer plugin enabled. Make sure to specify the Buccaneer server URL in the launch arguments:
+
+```bash
+MyUnrealApp.exe -BuccaneerURL="http://127.0.0.1:8000"
+```
+
+For Pixel Streaming applications, you may also want to include:
+
+```bash
+MyUnrealApp.exe -BuccaneerURL="http://127.0.0.1:8000" -PixelStreamingUrl=ws://127.0.0.1:8888
+```
+
+The application will now send performance metrics and semantic events to the Buccaneer server, which will be scraped by Prometheus and displayed in the Grafana dashboard.
+
+
+## Running the Full Demo with Docker Compose
+
+For a complete batteries-included demonstration, Buccaneer provides a full Docker Compose setup that includes:
+- The Buccaneer server
+- All monitoring components (Prometheus, Grafana, Loki, and Promtail)
+- A demo Unreal Engine application with Pixel Streaming enabled
+- A Pixel Streaming signaling server
+
+### Requirements
 
 - One of the Linux distributions that is [supported by the NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html#supported-platforms)
-
 - The proprietary NVIDIA GPU drivers
-
-- [Docker](https://www.docker.com/)
-
+- [Docker](https://www.docker.com/) with Docker Compose support
 - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/overview.html)
 
-To start the demo, simply run the command `docker compose up` in the [Examples/Compose](./Examples/Compose) subdirectory. Docker Compose will automatically download all of the required container images and start the containers for each component of the stack. Once everything is running, open two web browser tabs:
+### Running the Demo
 
-- <http://127.0.0.1> - This is a demo Unreal Engine application that uses Pixel Streaming to allow streaming via a browser.
+To start the full demo, run the following command from the repository root:
 
-- <http://127.0.0.1:3000/dashboards> - This is the Grafana dashboard that displays metrics collected from the Unreal Engine application. Log in using the username `admin` and the password `admin`, and select "Unreal Engine Metrics" from the list of available dashboards.
+```bash
+docker compose -f Examples/Compose/docker-compose-all.yml up
+```
+
+Or navigate to the [Examples/Compose](./Examples/Compose) subdirectory and run:
+
+```bash
+docker compose -f docker-compose-all.yml up
+```
+
+Docker Compose will automatically download all required container images and start all components. Once everything is running, open two web browser tabs:
+
+- <http://127.0.0.1> - The demo Unreal Engine application streaming via Pixel Streaming
+- <http://127.0.0.1:3000/dashboards> - Grafana dashboard displaying metrics from the application. Log in using the username `admin` and the password `admin`, and select "Unreal Engine Metrics" from the list of available dashboards.
 
 
 ## Legal

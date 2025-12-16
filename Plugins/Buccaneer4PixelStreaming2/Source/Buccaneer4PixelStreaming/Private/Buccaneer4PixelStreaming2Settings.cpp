@@ -1,0 +1,294 @@
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
+
+#include "Buccaneer4PixelStreaming2Settings.h"
+
+#include "BuccaneerSettings.h"
+#include "Logging.h"
+#include "Misc/CommandLine.h"
+#include "UObject/ReflectedTypeAccessors.h"
+
+static const TSet<TPair<FString, FString>> GetCmdLineArg = {
+	{ "Buccaneer4PixelStreaming2.EnableStats", "Enabled" },
+	{ "Buccaneer4PixelStreaming2.ReportingInterval", "ReportingInterval" }
+};
+
+TAutoConsoleVariable<bool> UBuccaneer4PixelStreaming2Settings::CVarEnabled(
+	TEXT("Buccaneer4PixelStreaming2.EnableStats"),
+	true,
+	TEXT("Enables the collection and logging of Pixel Streaming stats with Buccaneer (default: true)"),
+	ECVF_Default);
+
+TAutoConsoleVariable<float> UBuccaneer4PixelStreaming2Settings::CVarReportingInterval(
+	TEXT("Buccaneer4PixelStreaming2.ReportingInterval"),
+	1.0f,
+	TEXT("The interval at which to report Pixel Streaming 2 performance metrics (default: 1.0 seconds)"),
+	ECVF_Default);
+
+FName UBuccaneer4PixelStreaming2Settings::GetCategoryName() const
+{
+	return TEXT("Plugins");
+}
+
+#if WITH_EDITOR
+FText UBuccaneer4PixelStreaming2Settings::GetSectionText() const
+{
+	return NSLOCTEXT("Buccaneer4PixelStreaming2Plugin", "Buccaneer4PixelStreaming2SettingsSection", "Buccaneer4PixelStreaming2");
+}
+
+void UBuccaneer4PixelStreaming2Settings::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	FString PropertyName = PropertyChangedEvent.Property->GetNameCPP();
+
+	FString CVarName;
+	if (CVarName = Util::FindCVarFromProperty(GetCmdLineArg, PropertyName); !CVarName.IsEmpty())
+	{
+        SetCVarFromProperty(CVarName, PropertyChangedEvent.Property);
+	}
+}
+#endif
+
+void UBuccaneer4PixelStreaming2Settings::SetCVarAndPropertyFromValue(const FString& CVarName, FProperty* Property, const FString& Value)
+{
+	IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(*CVarName);
+	if (!CVar)
+	{
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Warning, "Failed to find CVar: {0}", CVarName);
+		return;
+	}
+
+	if (FByteProperty* ByteProperty = CastField<FByteProperty>(Property); ByteProperty != NULL && ByteProperty->Enum != NULL)
+	{
+		CVar->Set(FCString::Atoi(*Value), ECVF_SetByCommandline);
+		ByteProperty->SetPropertyValue_InContainer(this, FCString::Atoi(*Value));
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [{2}] from command line", CVarName, Property->GetNameCPP(), FCString::Atoi(*Value));
+	}
+	else if (FEnumProperty* EnumProperty = CastField<FEnumProperty>(Property))
+	{
+		int64 EnumIndex = EnumProperty->GetEnum()->GetIndexByNameString(Value.Replace(TEXT("_"), TEXT("")));
+		if (EnumIndex != INDEX_NONE)
+		{
+			CVar->Set(*EnumProperty->GetEnum()->GetNameStringByIndex(EnumIndex), ECVF_SetByCommandline);
+
+			FNumericProperty* UnderlyingProp = EnumProperty->GetUnderlyingProperty();
+			int64*			  PropertyAddress = EnumProperty->ContainerPtrToValuePtr<int64>(this);
+			*PropertyAddress = EnumProperty->GetEnum()->GetValueByIndex(EnumIndex);
+
+			UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [{2}] from command line", CVarName, Property->GetNameCPP(), EnumProperty->GetEnum()->GetNameStringByIndex(EnumIndex));
+		}
+		else
+		{
+			UE_LOGFMT(LogBuccaneer4PixelStreaming2, Warning, "{0} is not a valid enum value for {1}", Value, EnumProperty->GetEnum()->CppType);
+		}
+	}
+	else if (FBoolProperty* BoolProperty = CastField<FBoolProperty>(Property))
+	{
+		bool bValue = false;
+		if (Value.Equals(FString(TEXT("true")), ESearchCase::IgnoreCase))
+		{
+			bValue = true;
+		}
+		else if (Value.Equals(FString(TEXT("false")), ESearchCase::IgnoreCase))
+		{
+			bValue = false;
+		}
+		CVar->Set(bValue, ECVF_SetByCommandline);
+		BoolProperty->SetPropertyValue_InContainer(this, bValue);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [{2}] from command line", CVarName, Property->GetNameCPP(), bValue);
+	}
+	else if (FIntProperty* IntProperty = CastField<FIntProperty>(Property))
+	{
+		CVar->Set(FCString::Atoi(*Value), ECVF_SetByCommandline);
+		IntProperty->SetPropertyValue_InContainer(this, FCString::Atoi(*Value));
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [{2}] from command line", CVarName, Property->GetNameCPP(), FCString::Atoi(*Value));
+	}
+	else if (FFloatProperty* FloatProperty = CastField<FFloatProperty>(Property))
+	{
+		CVar->Set(FCString::Atof(*Value), ECVF_SetByCommandline);
+		FloatProperty->SetPropertyValue_InContainer(this, FCString::Atof(*Value));
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [{2}] from command line", CVarName, Property->GetNameCPP(), FCString::Atof(*Value));
+	}
+	else if (FStrProperty* StringProperty = CastField<FStrProperty>(Property))
+	{
+		CVar->Set(*Value, ECVF_SetByCommandline);
+		StringProperty->SetPropertyValue_InContainer(this, *Value);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [\"{2}\"] from command line", CVarName, Property->GetNameCPP(), Value);
+	}
+	else if (FNameProperty* NameProperty = CastField<FNameProperty>(Property))
+	{
+		CVar->Set(*Value, ECVF_SetByCommandline);
+		NameProperty->SetPropertyValue_InContainer(this, FName(*Value));
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [\"{2}\"] from command line", CVarName, Property->GetNameCPP(), Value);
+	}
+	else if (FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
+	{
+		// TODO (william.belcher): Only FString array properties are currently supported
+		CVar->Set(*Value, ECVF_SetByCommandline);
+
+		TArray<FString> StringArray;
+		Value.ParseIntoArray(StringArray, TEXT(","), true);
+
+		TArray<FString>& Array = *ArrayProperty->ContainerPtrToValuePtr<TArray<FString>>(this);
+		Array = StringArray;
+
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] and Property [{1}] to [\"{2}\"] from command line", CVarName, Property->GetNameCPP(), Value);
+	}
+}
+
+void UBuccaneer4PixelStreaming2Settings::SetCVarFromProperty(const FString& CVarName, FProperty* Property)
+{
+	IConsoleVariable* CVar = IConsoleManager::Get().FindConsoleVariable(*CVarName);
+	if (!CVar)
+	{
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Warning, "Failed to find CVar: {0}", CVarName);
+		return;
+	}
+
+	if (FByteProperty* ByteProperty = CastField<FByteProperty>(Property); ByteProperty != NULL && ByteProperty->Enum != NULL)
+	{
+		CVar->Set(ByteProperty->GetPropertyValue_InContainer(this), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [{1}] from Property [{2}]", CVarName, ByteProperty->GetPropertyValue_InContainer(this), Property->GetNameCPP());
+	}
+	else if (FEnumProperty* EnumProperty = CastField<FEnumProperty>(Property))
+	{
+		void* PropertyAddress = EnumProperty->ContainerPtrToValuePtr<void>(this);
+		int64 CurrentValue = EnumProperty->GetUnderlyingProperty()->GetSignedIntPropertyValue(PropertyAddress);
+		CVar->Set(*EnumProperty->GetEnum()->GetNameStringByValue(CurrentValue), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [{1}] from Property [{2}]", CVarName, EnumProperty->GetEnum()->GetNameStringByValue(CurrentValue), Property->GetNameCPP());
+	}
+	else if (FBoolProperty* BoolProperty = CastField<FBoolProperty>(Property))
+	{
+		CVar->Set(BoolProperty->GetPropertyValue_InContainer(this), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [{1}] from Property [{2}]", CVarName, BoolProperty->GetPropertyValue_InContainer(this), Property->GetNameCPP());
+	}
+	else if (FIntProperty* IntProperty = CastField<FIntProperty>(Property))
+	{
+		CVar->Set(IntProperty->GetPropertyValue_InContainer(this), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [{1}] from Property [{2}]", CVarName, IntProperty->GetPropertyValue_InContainer(this), Property->GetNameCPP());
+	}
+	else if (FFloatProperty* FloatProperty = CastField<FFloatProperty>(Property))
+	{
+		CVar->Set(FloatProperty->GetPropertyValue_InContainer(this), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [{1}] from Property [{2}]", CVarName, FloatProperty->GetPropertyValue_InContainer(this), Property->GetNameCPP());
+	}
+	else if (FStrProperty* StringProperty = CastField<FStrProperty>(Property))
+	{
+		CVar->Set(*StringProperty->GetPropertyValue_InContainer(this), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [\"{1}\"] from Property [{2}]", CVarName, StringProperty->GetPropertyValue_InContainer(this), Property->GetNameCPP());
+	}
+	else if (FNameProperty* NameProperty = CastField<FNameProperty>(Property))
+	{
+		CVar->Set(*NameProperty->GetPropertyValue_InContainer(this).ToString(), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [\"{1}\"] from Property [{2}]", CVarName, NameProperty->GetPropertyValue_InContainer(this), Property->GetNameCPP());
+	}
+	else if (FArrayProperty* ArrayProperty = CastField<FArrayProperty>(Property))
+	{
+		// TODO (william.belcher): Only FString array properties are currently supported
+		TArray<FString> Array = *ArrayProperty->ContainerPtrToValuePtr<TArray<FString>>(this);
+		CVar->Set(*FString::Join(Array, TEXT(",")), ECVF_SetByProjectSetting);
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Setting CVar [{0}] to [\"{1}\"] from Property [{2}]", CVarName, FString::Join(Array, TEXT(",")), Property->GetNameCPP());
+	}
+}
+
+void UBuccaneer4PixelStreaming2Settings::InitializeCVarsFromProperties()
+{
+	UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Initializing CVars from ini");
+	for (FProperty* Property = GetClass()->PropertyLink; Property; Property = Property->PropertyLinkNext)
+	{
+		if (!Property->HasAnyPropertyFlags(CPF_Config))
+		{
+			continue;
+		}
+
+		FString CVarName;
+		if (CVarName = Util::FindCVarFromProperty(GetCmdLineArg, Property->GetNameCPP()); !CVarName.IsEmpty())
+		{
+			SetCVarFromProperty(CVarName, Property);
+			continue;
+		}
+	}
+}
+
+void UBuccaneer4PixelStreaming2Settings::ValidateCommandLineArgs()
+{
+	FString CommandLine = FCommandLine::Get();
+
+	TArray<FString> CommandArray;
+	CommandLine.ParseIntoArray(CommandArray, TEXT(" "), true);
+
+	for (FString Command : CommandArray)
+	{
+		Command.RemoveFromStart(TEXT("-"));
+		if (!Command.StartsWith("Buccaneer4PixelStreaming2"))
+		{
+			continue;
+		}
+
+		// Get the pure command line arg from an arg that contains an '=', eg BuccaneerURL=
+		FString CurrentCommandLineArg = Command;
+		if (Command.Contains("="))
+		{
+			Command.Split(TEXT("="), &CurrentCommandLineArg, nullptr);
+		}
+
+		bool bValidArg = false;
+		for (const TPair<FString, FString>& Pair : GetCmdLineArg)
+		{
+			FString ValidCommandLineArg = Util::ConsoleVariableToCommandArgParam(Pair.Key);
+			if (CurrentCommandLineArg == ValidCommandLineArg)
+			{
+				bValidArg = true;
+				break;
+			}
+		}
+
+		if (!bValidArg)
+		{
+			UE_LOGFMT(LogBuccaneer4PixelStreaming2, Warning, "Unknown Buccaneer4PixelStreaming2 command line arg: {0}", CurrentCommandLineArg);
+		}
+	}
+}
+
+void UBuccaneer4PixelStreaming2Settings::ParseCommandlineArgs()
+{
+	UE_LOGFMT(LogBuccaneer4PixelStreaming2, Verbose, "Updating CVars and properties with command line args");
+	for (const TPair<FString, FString>& Pair : GetCmdLineArg)
+	{
+		FString CVarString = Pair.Key;
+		FString PropertyName = Pair.Value;
+
+		FProperty* Property = GetClass()->FindPropertyByName(FName(*PropertyName));
+		if (!Property || !Property->HasAnyPropertyFlags(CPF_Config))
+		{
+			continue;
+		}
+
+		// Handle a directly parsable commandline
+		FString ConsoleString;
+		if (FParse::Value(FCommandLine::Get(), *Util::ConsoleVariableToCommandArgValue(CVarString), ConsoleString))
+		{
+			SetCVarAndPropertyFromValue(CVarString, Property, ConsoleString);
+		}
+		else if (FParse::Param(FCommandLine::Get(), *Util::ConsoleVariableToCommandArgParam(CVarString)))
+		{
+			SetCVarAndPropertyFromValue(CVarString, Property, TEXT("true"));
+		}
+	}
+}
+
+void UBuccaneer4PixelStreaming2Settings::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+	UE_LOGFMT(LogBuccaneer4PixelStreaming2, Log, "Initialising Buccaneer4PixelStreaming2 settings.");
+
+	// Set all the CVars to reflect the state of the ini
+	InitializeCVarsFromProperties();
+
+	// Validate command line args to log if they're invalid
+	ValidateCommandLineArgs();
+
+	// Update CVars and properties based on command line args
+	ParseCommandlineArgs();
+}

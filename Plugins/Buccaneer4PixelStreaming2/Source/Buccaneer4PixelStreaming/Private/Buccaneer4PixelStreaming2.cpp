@@ -1,12 +1,11 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
-#include "Buccaneer4PixelStreaming.h"
+#include "Buccaneer4PixelStreaming2.h"
 #include "IBuccaneerStatsModule.h"
 #include "Logging.h"
-#include "PixelStreamingDelegates.h"
-#include "Buccaneer4PixelStreamingSettings.h"
+#include "Buccaneer4PixelStreaming2Settings.h"
 
-TMap<FString, FString> StatDescriptionMap = {
+TMap<FString, FString> PSStatDescriptionMap = {
 	{"jitterBufferDelay", "Current playout delay introduced by the jitter buffer"},
 	{"framesSent", "Total number of video frames sent"},
 	{"framesPerSecond", "Current streaming rate in frames (fps)"},
@@ -46,39 +45,39 @@ TMap<FString, FString> StatDescriptionMap = {
 	{"encodeFps", "Encode frames per second (fps)"},
 	{"captureToSend", "Capture to send time (ms)"},
 	{"captureFps", "Capture frames per second (fps)"}};
-	
-void FBuccaneer4PixelStreamingModule::StartupModule()
+
+void FBuccaneer4PixelStreaming2Module::StartupModule()
 {
 	LoggingStart = FPlatformTime::Seconds();
 
-	if (UPixelStreamingDelegates *Delegates = UPixelStreamingDelegates::GetPixelStreamingDelegates())
+	if (UPixelStreaming2Delegates *Delegates = UPixelStreaming2Delegates::Get())
 	{
-		Delegates->OnStatChangedNative.AddRaw(this, &FBuccaneer4PixelStreamingModule::ConsumeStat);
+		Delegates->OnStatChangedNative.AddRaw(this, &FBuccaneer4PixelStreaming2Module::ConsumeStat);
 	}
 }
 
-void FBuccaneer4PixelStreamingModule::ShutdownModule()
+void FBuccaneer4PixelStreaming2Module::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
 }
 
-void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId PlayerId, FName StatName, float StatValue)
+void FBuccaneer4PixelStreaming2Module::ConsumeStat(FString PlayerId, FName StatName, float StatValue)
 {
-	if (!UBuccaneer4PixelStreamingSettings::CVarEnabled.GetValueOnAnyThread())
+	if (!UBuccaneer4PixelStreaming2Settings::CVarEnabled.GetValueOnAnyThread() || UBuccaneer4PixelStreaming2Settings::CVarReportingInterval.GetValueOnAnyThread() <= 0)
 	{
 		return;
 	}
 
 	FBuccaneerMetric NewMetric;
 	NewMetric.Name = StatName.ToString();
-	if (const FString* Description = StatDescriptionMap.Find(StatName.ToString()))
+	if (const FString* Description = PSStatDescriptionMap.Find(StatName.ToString()))
 	{
 		NewMetric.Description = *Description;
 	}
 	else
 	{
-		UE_LOGFMT(LogBuccaneer4PixelStreaming, Log, "Unknown stat {0}", StatName.ToString());
+		UE_LOGFMT(LogBuccaneer4PixelStreaming2, Verbose, "Unknown stat {0}", StatName.ToString());
 		NewMetric.Description = StatName.ToString(); // Default description
 	}
 	NewMetric.Value = StatValue;
@@ -122,8 +121,7 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 	}
 
 	double NowTime = IBuccaneerStatsModule::GetStatsTimestamp();
-	const double ReportingIntervalSeconds = UBuccaneer4PixelStreamingSettings::CVarReportingInterval.GetValueOnAnyThread();
-	if (ReportingIntervalSeconds > 0.0 && (NowTime - LoggingStart) >= ReportingIntervalSeconds)
+	if ((NowTime - LoggingStart) >= UBuccaneer4PixelStreaming2Settings::CVarReportingInterval.GetValueOnAnyThread())
 	{
 		LoggingStart = NowTime;
 		MetricsCollection.Timestamp = LoggingStart;
@@ -135,4 +133,4 @@ void FBuccaneer4PixelStreamingModule::ConsumeStat(FPixelStreamingPlayerId Player
 	}
 }
 
-IMPLEMENT_MODULE(FBuccaneer4PixelStreamingModule, Buccaneer4PixelStreaming)
+IMPLEMENT_MODULE(FBuccaneer4PixelStreaming2Module, Buccaneer4PixelStreaming2)

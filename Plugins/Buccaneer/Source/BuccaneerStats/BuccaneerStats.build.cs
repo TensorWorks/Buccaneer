@@ -1,10 +1,10 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
 using UnrealBuildTool;
 
-public class TimeSeriesDataEmitter : ModuleRules
+public class BuccaneerStats : ModuleRules
 {
-	public TimeSeriesDataEmitter(ReadOnlyTargetRules Target) : base(Target)
+	public BuccaneerStats(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 		
@@ -17,7 +17,7 @@ public class TimeSeriesDataEmitter : ModuleRules
 			"Slate",
 			"SlateCore",
 			"RenderCore",
-			"SemanticEventEmitter",
+			"BuccaneerEvents",
 			"Json"
 		});
 

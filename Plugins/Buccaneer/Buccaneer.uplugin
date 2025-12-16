@@ -21,12 +21,12 @@
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "TimeSeriesDataEmitter",
+			"Name": "BuccaneerStats",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		},
 		{
-			"Name": "SemanticEventEmitter",
+			"Name": "BuccaneerEvents",
 			"Type": "Runtime",
 			"LoadingPhase": "Default"
 		}

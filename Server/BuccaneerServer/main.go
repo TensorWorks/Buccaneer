@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"io"
 	"log"
 	"net/http"
@@ -47,12 +48,18 @@ type record struct {
 type arbitraryJson map[string]interface{}
 
 func (collector *collector) Describe(ch chan<- *prometheus.Desc) {
+	collectorsMutex.Lock()
+	defer collectorsMutex.Unlock()
+
 	for _, metric := range collector.metrics {
 		ch <- metric.description
 	}
 }
 
 func (collector *collector) Collect(ch chan<- prometheus.Metric) {
+	collectorsMutex.Lock()
+	defer collectorsMutex.Unlock()
+
 	for _, metric := range collector.metrics {
 
 		if record, ok := metric.records[""]; ok {
@@ -98,6 +105,15 @@ func removeStaleCollectors() {
 }
 
 func main() {
+	// Determine the port to use: command line arg > environment variable > default
+	port := flag.String("port", os.Getenv("PORT"), "Port to listen on (can also be set via PORT environment variable)")
+	flag.Parse()
+
+	// Use default if neither flag nor env var is set
+	if *port == "" {
+		*port = "8000"
+	}
+
 	// start sub-routine
 	go removeStaleCollectors()
 
@@ -151,6 +167,8 @@ func main() {
 
 		if _, exists := collectors.Load(id.(string)); !exists {
 			// this is the first time we're seeing this ID, so configure accordingly
+			collectorsMutex.Lock()
+
 			ts := time.Now().Unix()
 			collector := collector{
 				metadata:       make(map[string]string),
@@ -179,6 +197,12 @@ func main() {
 
 					metricJson := value.(map[string]interface{})
 
+					// Get description, defaulting to the metric name if not provided
+					description := key
+					if desc, ok := metricJson["description"].(string); ok {
+						description = desc
+					}
+
 					if valueArray, ok := metricJson["value"].([]interface{}); ok {
 						// if the value object is an array, then loop through this array
 						recordMap := make(map[string]record)
@@ -193,7 +217,7 @@ func main() {
 						}
 
 						collector.metrics[key] = metric{
-							description: prometheus.NewDesc(key, metricJson["description"].(string), []string{"player"}, collector.metadata),
+							description: prometheus.NewDesc(key, description, []string{"player"}, collector.metadata),
 							records:     recordMap,
 						}
 					} else {
@@ -203,7 +227,7 @@ func main() {
 							time:  ts,
 						}
 						collector.metrics[key] = metric{
-							description: prometheus.NewDesc(key, metricJson["description"].(string), nil, collector.metadata),
+							description: prometheus.NewDesc(key, description, nil, collector.metadata),
 							records:     recordMap,
 						}
 					}
@@ -212,7 +236,11 @@ func main() {
 
 			// store collector in our internal map
 			collectors.Store(id, collector)
-			// register collector with Prometheus
+
+			collectorsMutex.Unlock()
+
+			// register collector with Prometheus (must be done outside the mutex lock
+			// because Prometheus will call Describe which also needs the mutex)
 			prometheus.Register(&collector)
 			log.Printf("Registering collector for instance \"%s\"", id)
 
@@ -243,6 +271,12 @@ func main() {
 		for key, value := range metricsJson {
 			metricJson := value.(map[string]interface{})
 
+			// Get description, defaulting to the metric name if not provided
+			description := key
+			if desc, ok := metricJson["description"].(string); ok {
+				description = desc
+			}
+
 			if valueArray, ok := metricJson["value"].([]interface{}); ok {
 				// if the value object is an array, then loop through this array
 				recordMap := make(map[string]record)
@@ -256,7 +290,7 @@ func main() {
 				}
 
 				collector.metrics[key] = metric{
-					description: prometheus.NewDesc(key, metricJson["description"].(string), []string{"player"}, collector.metadata),
+					description: prometheus.NewDesc(key, description, []string{"player"}, collector.metadata),
 					records:     recordMap,
 				}
 			} else {
@@ -266,7 +300,7 @@ func main() {
 					time:  time.Now().Unix(),
 				}
 				collector.metrics[key] = metric{
-					description: prometheus.NewDesc(key, metricJson["description"].(string), nil, collector.metadata),
+					description: prometheus.NewDesc(key, description, nil, collector.metadata),
 					records:     recordMap,
 				}
 			}
@@ -281,8 +315,26 @@ func main() {
 		res.WriteHeader(http.StatusOK)
 	})
 
+	// handler for root endpoint - health check
+	http.HandleFunc("/", func(res http.ResponseWriter, req *http.Request) {
+		res.WriteHeader(http.StatusOK)
+		res.Write([]byte("Buccaneer Server is Running"))
+	})
+
 	// handler for when prometheus scrapes data
 	http.Handle("/metrics", promhttp.Handler())
 
-	log.Fatal(http.ListenAndServe(":8000", nil))
+	// Log server startup information
+	addr := "127.0.0.1:" + *port
+	log.Println("===========================================")
+	log.Printf("Buccaneer Server starting on http://%s", addr)
+	log.Println("===========================================")
+	log.Println("Available endpoints:")
+	log.Printf("  GET  http://%s/        - Server health check", addr)
+	log.Printf("  POST http://%s/event   - Receive semantic events from Buccaneer clients such as UE Buccaneer plugins", addr)
+	log.Printf("  POST http://%s/stats   - Receive performance metrics from Buccaneer clients such as UE Buccaneer plugins", addr)
+	log.Printf("  GET  http://%s/metrics - Prometheus scrape endpoint", addr)
+	log.Println("===========================================")
+
+	log.Fatal(http.ListenAndServe(":"+*port, nil))
 }

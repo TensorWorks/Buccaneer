@@ -1,11 +1,10 @@
 // Copyright TensorWorks Pty Ltd. All Rights Reserved.
 
-
 using UnrealBuildTool;
 
-public class Buccaneer4PixelStreaming : ModuleRules
+public class Buccaneer4PixelStreaming2 : ModuleRules
 {
-	public Buccaneer4PixelStreaming(ReadOnlyTargetRules Target) : base(Target)
+	public Buccaneer4PixelStreaming2(ReadOnlyTargetRules Target) : base(Target)
 	{
 		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;		
 		
@@ -13,12 +12,11 @@ public class Buccaneer4PixelStreaming : ModuleRules
 			new string[]
 			{
 				"Core",
-				"PixelStreaming",
+				"PixelStreaming2",
 				"Json",
 				"CoreUObject",
 				"DeveloperSettings",
-				"EngineSettings",
-				"BuccaneerCommon"
+				"EngineSettings"
 			});
 			
 		
