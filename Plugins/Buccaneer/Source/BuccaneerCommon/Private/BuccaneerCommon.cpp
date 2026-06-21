@@ -134,9 +134,8 @@ void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonO
     HttpRequest->SetHeader(TEXT("Content-Type"), TEXT("application/json"));
     HttpRequest->SetVerb(TEXT("POST"));
     HttpRequest->SetContentAsString(body);
-    bool bInFlight = true;
     HttpRequest->OnProcessRequestComplete().BindLambda(
-        [&bInFlight](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded)
+        [](FHttpRequestPtr HttpRequest, FHttpResponsePtr HttpResponse, bool bSucceeded)
         {
             FString ResponseStr, ErrorStr;
 
@@ -158,8 +157,6 @@ void FBuccaneerCommonModule::SendHTTP(FString URL, TSharedPtr<FJsonObject> JsonO
             {
                 UE_LOG(BuccaneerCommon, Warning, TEXT("Push event response: %s"), *ErrorStr);
             }
-
-            bInFlight = false;
         });
     HttpRequest->ProcessRequest();
 }
